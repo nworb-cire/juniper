@@ -18,9 +18,9 @@ class BaseOutcomes(BaseDataSource, ABC):
     def __init__(self, path: S3Path = None):
         config = load_config()
         if path is None:
-            path = config["data_sources"]["outcomes"]["location"],
-        super().__init__(path=path)
+            path = config["data_sources"]["outcomes"]["location"]
         self.timestamp_column = config["data_sources"]["outcomes"]["timestamp_column"]
+        super().__init__(path=path)
 
     def index_range(self, start: datetime | None, end: datetime | None) -> pd.Index:
         if start is None:

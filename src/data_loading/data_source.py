@@ -19,9 +19,9 @@ class BaseDataSource(ABC):
             path: S3Path,
     ):
         self.path = path
-        self.get_metadata()
         config = load_config()
         self.index_column = config["data_sources"]["index_column"]
+        self.get_metadata()
 
     def read_parquet(self, path: S3Path = None, columns: list[str] = None, index_column: str = None) \
             -> pd.DataFrame:

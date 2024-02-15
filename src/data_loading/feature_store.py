@@ -14,9 +14,9 @@ class FeatureStore(BaseDataSource):
     def __init__(self, path: S3Path = None):
         config = load_config()
         if path is None:
-            path = config["data_sources"]["feature_store"]["location"],
-        super().__init__(path=path)
+            path = config["data_sources"]["feature_store"]["location"]
         self.timestamp_column = config["data_sources"]["feature_store"]["timestamp_column"]
+        super().__init__(path=path)
     
     def get_metadata(self):
         try:
