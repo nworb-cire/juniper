@@ -19,6 +19,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer):
 
         self._validate_column_callables(X)
         self._validate_remainder(X)
+        _all_transformer_columns = []
 
         jobs = []
         for _, transformer, columns in self.transformers:
@@ -27,14 +28,27 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer):
             jobs.append(
                 delayed(transformer.fit_transform)(X[columns])
             )
+            _all_transformer_columns.extend(columns)
         Xs = Parallel(
             n_jobs=len(self.transformers),
             backend='threading',
         )(jobs)
 
+        if self.remainder == "passthrough":
+            self._passthrough_columns = [c for c in X.columns if c not in _all_transformer_columns]
+            Xs.append(X[self._passthrough_columns])
+
         self.sparse_output_ = False
 
-        self._update_fitted_transformers([t for _, t, _ in self.transformers])
+        transformers = list(
+            self._iter(
+                fitted=False,
+                column_as_labels=False,
+                skip_drop=True,
+                skip_empty_columns=True,
+            )
+        )
+        self._update_fitted_transformers(transformers)
         # self._validate_output(Xs)
         # self._record_output_indices(Xs)
 
