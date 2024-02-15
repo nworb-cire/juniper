@@ -55,8 +55,7 @@ def nested_to_record(
     sep: str = ...,
     level: int = ...,
     max_level: int | None = ...,
-) -> dict[str, Any]:
-    ...
+) -> dict[str, Any]: ...
 
 
 @overload
@@ -66,8 +65,7 @@ def nested_to_record(
     sep: str = ...,
     level: int = ...,
     max_level: int | None = ...,
-) -> list[dict[str, Any]]:
-    ...
+) -> list[dict[str, Any]]: ...
 
 
 def nested_to_record(
@@ -134,9 +132,7 @@ def nested_to_record(
             # current dict level  < maximum level provided and
             # only dicts gets recurse-flattened
             # only at level>1 do we rename the rest of the keys
-            if not isinstance(v, dict) or (
-                max_level is not None and level >= max_level
-            ):
+            if not isinstance(v, dict) or (max_level is not None and level >= max_level):
                 if level != 0:  # so we skip copying for top level, common case
                     v = new_d.pop(k)
                     new_d[newkey] = v
@@ -411,9 +407,7 @@ def json_normalize(
     Returns normalized data with columns prefixed with the given string.
     """
 
-    def _pull_field(
-        js: dict[str, Any], spec: list | str, extract_record: bool = False
-    ) -> Scalar | Iterable:
+    def _pull_field(js: dict[str, Any], spec: list | str, extract_record: bool = False) -> Scalar | Iterable:
         """Internal function to pull field"""
         result = js
         try:
@@ -427,15 +421,13 @@ def json_normalize(
         except KeyError as e:
             if extract_record:
                 raise KeyError(
-                    f"Key {e} not found. If specifying a record_path, all elements of "
-                    f"data should have the path."
+                    f"Key {e} not found. If specifying a record_path, all elements of " f"data should have the path."
                 ) from e
             if errors == "ignore":
                 return np.nan
             else:
                 raise KeyError(
-                    f"Key {e} not found. To replace missing values of {e} with "
-                    f"np.nan, pass in errors='ignore'"
+                    f"Key {e} not found. To replace missing values of {e} with " f"np.nan, pass in errors='ignore'"
                 ) from e
 
         return result
@@ -454,10 +446,7 @@ def json_normalize(
             if pd.isnull(result):
                 result = []
             else:
-                raise TypeError(
-                    f"Path must contain list or null, "
-                    f"but got {type(result).__name__} at {spec!r}"
-                )
+                raise TypeError(f"Path must contain list or null, " f"but got {type(result).__name__} at {spec!r}")
         return result
 
     if isinstance(data, Series):
@@ -480,13 +469,7 @@ def json_normalize(
     # check to see if a simple recursive function is possible to
     # improve performance (see #15621) but only for cases such
     # as pd.Dataframe(data) or pd.Dataframe(data, sep)
-    if (
-        record_path is None
-        and meta is None
-        and meta_prefix is None
-        and record_prefix is None
-        and max_level is None
-    ):
+    if record_path is None and meta is None and meta_prefix is None and record_prefix is None and max_level is None:
         return DataFrame(_simple_json_normalize(data, sep=sep), index=index)
 
     if record_path is None:
@@ -530,12 +513,7 @@ def json_normalize(
         else:
             for obj in data:
                 recs = _pull_records(obj, path[0])
-                recs = [
-                    nested_to_record(r, sep=sep, max_level=max_level)
-                    if isinstance(r, dict)
-                    else r
-                    for r in recs
-                ]
+                recs = [nested_to_record(r, sep=sep, max_level=max_level) if isinstance(r, dict) else r for r in recs]
 
                 # For repeating the metadata later
                 lengths.append(len(recs))
@@ -560,9 +538,7 @@ def json_normalize(
             k = meta_prefix + k
 
         if k in result:
-            raise ValueError(
-                f"Conflicting metadata name {k}, need distinguishing prefix "
-            )
+            raise ValueError(f"Conflicting metadata name {k}, need distinguishing prefix ")
         # GH 37782
 
         values = np.array(v, dtype=object)

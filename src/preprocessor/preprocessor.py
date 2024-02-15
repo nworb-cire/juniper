@@ -7,8 +7,12 @@ from src.common.setup import load_config
 from src.preprocessor.dask.column_normalizer import ColumnNormalizer
 from src.preprocessor.dask.column_transformer import ColumnTransformer
 from src.preprocessor.metadata import FeatureStoreMetadata
-from src.preprocessor.pipelines import get_default_numeric_pipeline, get_default_categorical_pipeline, \
-    get_default_boolean_pipeline, get_default_timestamp_pipeline
+from src.preprocessor.pipelines import (
+    get_default_numeric_pipeline,
+    get_default_categorical_pipeline,
+    get_default_boolean_pipeline,
+    get_default_timestamp_pipeline,
+)
 
 
 def get_preprocessor(
@@ -19,7 +23,7 @@ def get_preprocessor(
     timestamp_pipeline: Pipeline | None = None,
 ) -> ColumnTransformer:
     metadata = FeatureStoreMetadata(schema)
-    
+
     transformers = []
     if columns := metadata.numeric_columns:
         if numeric_pipeline is None:
@@ -51,16 +55,18 @@ def get_preprocessor(
                 record_path=feature_metadata.get("record_path"),
                 meta=feature_metadata.get("meta"),
             )
-            if all(field.metadata[b'usable_type'] == b'unusable' for field in cn.schema_out):
+            if all(field.metadata[b"usable_type"] == b"unusable" for field in cn.schema_out):
                 logging.warning(f"Array column {column} is unusable and will be dropped")
                 continue
-            pipeline = Pipeline(steps=[
-                ("normalizer", cn),
-                ("preprocessor", get_preprocessor(cn.schema_out)),
-            ])
+            pipeline = Pipeline(
+                steps=[
+                    ("normalizer", cn),
+                    ("preprocessor", get_preprocessor(cn.schema_out)),
+                ]
+            )
             transformers.append((column, pipeline, [column]))
 
-    column_transformer = ColumnTransformer(transformers=transformers, remainder='drop')
+    column_transformer = ColumnTransformer(transformers=transformers, remainder="drop")
     if len(transformers) == 0:
         raise ValueError("No transformers found")
     logging.info(f"Preprocessor initialized with {len(transformers)} transformers")

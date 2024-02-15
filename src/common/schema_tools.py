@@ -3,8 +3,9 @@ import json
 import pyarrow as pa
 
 
-def _get_flattened_fields(list_type: pa.lib.ListType, record_path: str, metadata: dict | None) \
-        -> list[tuple[str, pa.lib.DataType]]:
+def _get_flattened_fields(
+    list_type: pa.lib.ListType, record_path: str, metadata: dict | None
+) -> list[tuple[str, pa.lib.DataType]]:
     fields = []
     for field in list_type.value_field.flatten():
         name = field.name.replace("item", record_path)
@@ -23,10 +24,11 @@ def _get_flattened_fields(list_type: pa.lib.ListType, record_path: str, metadata
             fields.append(pa.field(name, field.type, metadata={"usable_type": _metadata}))
     return fields
 
+
 def get_field_schema(field: pa.lib.Field) -> pa.Schema:
     if not isinstance(field.type, pa.lib.ListType):
         raise ValueError("Field type must be a ListType")
-    if (metadata_str := field.metadata.get(b'usable_type')) != b'array':  # TODO: fix after the metadata is fixed
+    if (metadata_str := field.metadata.get(b"usable_type")) != b"array":  # TODO: fix after the metadata is fixed
         metadata = json.loads(metadata_str)[0]
     else:
         metadata = None

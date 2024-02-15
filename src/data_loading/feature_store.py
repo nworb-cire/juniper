@@ -17,7 +17,7 @@ class FeatureStore(BaseDataSource):
             path = config["data_sources"]["feature_store"]["location"]
         self.timestamp_column = config["data_sources"]["feature_store"]["timestamp_column"]
         super().__init__(path=path)
-    
+
     def get_metadata(self):
         try:
             path = next(self.path.iterdir())
@@ -25,17 +25,18 @@ class FeatureStore(BaseDataSource):
             path = self.path
         config = load_config()
         schema = pq.read_schema(
-            path.as_posix()[1:], 
+            path.as_posix()[1:],
             filesystem=pa.fs.S3FileSystem(
                 endpoint_override=config["minio"]["endpoint_url"],
                 access_key=config["minio"]["aws_access_key_id"],
                 secret_key=config["minio"]["aws_secret_access_key"],
-            )
+            ),
         )
         self.schema = schema
 
-    def _load_train_test(self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None) \
-        -> tuple[pd.DataFrame, pd.DataFrame | None]:
+    def _load_train_test(
+        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
+    ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         df = self.read_parquet()
         train_idx = compute_maybe(train_idx)
         train = df.loc[train_idx]

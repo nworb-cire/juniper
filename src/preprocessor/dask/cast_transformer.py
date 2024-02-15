@@ -5,7 +5,6 @@ from sklearn.base import TransformerMixin, BaseEstimator
 
 
 class CastTransformer(TransformerMixin, BaseEstimator):
-
     """
     Cast features into a specific types.
     This should be used to minimize the conversion
@@ -23,10 +22,8 @@ class CastTransformer(TransformerMixin, BaseEstimator):
     def _cast(self, a, name):
         try:
             a2 = a.astype(self.dtype)
-        except ValueError:
-            raise ValueError(
-                "Unable to cast {} from {} into {}.".format(name, a.dtype, self.dtype)
-            )
+        except ValueError as e:
+            raise ValueError("Unable to cast {} from {} into {}.".format(name, a.dtype, self.dtype)) from e
         return a2
 
     def fit(self, X, y=None, sample_weight=None):

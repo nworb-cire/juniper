@@ -1,4 +1,3 @@
-import warnings
 from typing import Union, Any, Optional, List
 
 import dask.dataframe as dd
@@ -41,9 +40,7 @@ class RobustScaler(sklearn.preprocessing.RobustScaler):
         self.n_features_in_: int = X.shape[1]
         return self
 
-    def transform(
-        self, X: Union[ArrayLike, DataFrameType]
-    ) -> Union[ArrayLike, DataFrameType]:
+    def transform(self, X: Union[ArrayLike, DataFrameType]) -> Union[ArrayLike, DataFrameType]:
         """Center and scale the data.
 
         Can be called on sparse input, provided that ``RobustScaler`` has been
@@ -75,9 +72,7 @@ class RobustScaler(sklearn.preprocessing.RobustScaler):
             X = X / self.scale_
         return X
 
-    def inverse_transform(
-        self, X: Union[ArrayLike, DataFrameType]
-    ) -> Union[ArrayLike, DataFrameType]:
+    def inverse_transform(self, X: Union[ArrayLike, DataFrameType]) -> Union[ArrayLike, DataFrameType]:
         """Scale back the data to the original representation
 
         Parameters

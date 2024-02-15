@@ -6,6 +6,7 @@ from sklearn.base import TransformerMixin, BaseEstimator
 
 from dask import dataframe as dd
 
+
 class MissingIndicator(TransformerMixin, BaseEstimator):
     def __init__(self, *, missing_values=np.nan):
         self.missing_values = missing_values
@@ -38,7 +39,7 @@ class ConstantImputer(TransformerMixin, BaseEstimator):
     def _validate_input(self, X):
         if not hasattr(X, "iloc"):
             raise TypeError("X must be a dataframe.")
-        
+
     def _fit_indicator(self, X):
         if self.indicator_ is not None:
             self.indicator_.fit(X)

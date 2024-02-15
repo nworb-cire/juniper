@@ -6,7 +6,7 @@ from src.data_loading.outcomes import StandardOutcomes
 from src.preprocessor.preprocessor import get_preprocessor
 from src.validation.time_series_split import TimeSeriesSplit
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     init_services()
 
     feature_store = FeatureStore()

@@ -1,5 +1,4 @@
 import logging
-import os
 import tomllib
 from pathlib import Path
 
@@ -13,9 +12,9 @@ def load_config() -> dict:
     config_file = project_root / "config.toml"
     with open(config_file, "rb") as f:
         config = tomllib.load(f)
-    
-    config["data_sources"]["feature_store"]["location"] = S3Path(config["data_sources"]["feature_store"]["location"][4:])
-    config["data_sources"]["outcomes"]["location"] = S3Path(config["data_sources"]["outcomes"]["location"][4:])
+
+    for source in ["feature_store", "outcomes"]:
+        config["data_sources"][source]["location"] = S3Path(config["data_sources"][source]["location"][4:])
     return config
 
 
@@ -36,7 +35,7 @@ def init_dask(config):
         maximum=config["dask"]["max_workers"],
     )
     client = cluster.get_client()
-    logging.info(f"Dask client dashboard: {client.dashboard_link}")    
+    logging.info(f"Dask client dashboard: {client.dashboard_link}")
     client.wait_for_workers(config["dask"]["min_workers"])
     # benchmark = client.benchmark_hardware()
     # logging.info(f"Dask benchmark: {benchmark}")
@@ -52,9 +51,9 @@ def init_minio(config):
     register_configuration_parameter(PureS3Path("/"), resource=minio_resource)
 
 
-def init_services():    
+def init_services():
     config = load_config()
-    
+
     init_logging(config)
     init_dask(config)
     init_minio(config)

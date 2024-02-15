@@ -9,28 +9,26 @@ from sklearn.compose._column_transformer import _get_transformer_list
 
 
 class ColumnTransformer(sklearn.compose.ColumnTransformer):
-    
+
     __doc__ = sklearn.compose.ColumnTransformer.__doc__
-    
-    def _fit_or_transform(self, X, y=None, func: Literal['fit_transform', 'transform'] = None):
+
+    def _fit_or_transform(self, X, y=None, func: Literal["fit_transform", "transform"] = None):
         jobs = []
         for _, transformer, columns in self.transformers:
             if isinstance(transformer, str):
                 raise NotImplementedError
             _func = getattr(transformer, func)
-            jobs.append(
-                delayed(_func)(X[columns])
-            )
+            jobs.append(delayed(_func)(X[columns]))
         Xs = Parallel(
             n_jobs=len(self.transformers),
-            backend='threading',
+            backend="threading",
         )(jobs)
 
         if self.remainder == "passthrough":
             Xs.append(X[self._passthrough_columns])
-            
+
         return self._hstack(list(Xs))
-    
+
     def fit_transform(self, X, y=None, **params):
         self._check_feature_names(X, reset=True)
 
@@ -41,9 +39,9 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer):
         self._validate_column_callables(X)
         self._validate_remainder(X)
         _all_transformer_columns = chain(*[columns for _, _, columns in self.transformers])
-        self._passthrough_columns = [c for c in X.columns if c not in _all_transformer_columns]        
+        self._passthrough_columns = [c for c in X.columns if c not in _all_transformer_columns]
 
-        Xt = self._fit_or_transform(X, y, func='fit_transform')
+        Xt = self._fit_or_transform(X, y, func="fit_transform")
 
         self.sparse_output_ = False
 
@@ -64,7 +62,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer):
     def transform(self, X, **params):
         if not hasattr(X, "iloc"):
             raise ValueError("ColumnTransformer only accepts Pandas DataFrames or Dask DataFrames/Series as input")
-        return self._fit_or_transform(X, func='transform')
+        return self._fit_or_transform(X, func="transform")
 
     def _hstack(self, Xs):
         with warnings.catch_warnings():
@@ -78,9 +76,7 @@ def make_column_transformer(*transformers, **kwargs):
     n_jobs = kwargs.pop("n_jobs", 1)
     remainder = kwargs.pop("remainder", "drop")
     if kwargs:
-        raise TypeError(
-            'Unknown keyword arguments: "{}"'.format(list(kwargs.keys())[0])
-        )
+        raise TypeError('Unknown keyword arguments: "{}"'.format(list(kwargs.keys())[0]))
     transformer_list = _get_transformer_list(transformers)
     return ColumnTransformer(
         transformer_list,
@@ -89,4 +85,4 @@ def make_column_transformer(*transformers, **kwargs):
     )
 
 
-make_column_transformer.__doc__ = getattr(sklearn.compose.make_column_transformer, "__doc__")
+make_column_transformer.__doc__ = sklearn.compose.make_column_transformer.__doc__

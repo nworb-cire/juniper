@@ -23,16 +23,16 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         self.meta = meta
 
         if self.record_path is None:
-            self.record_prefix = f'{self.column_name}.'
+            self.record_prefix = f"{self.column_name}."
         else:
-            self.record_prefix = f'{self.column_name}.{self.record_path}.'
-        self.meta_prefix = f'{self.column_name}.'
+            self.record_prefix = f"{self.column_name}.{self.record_path}."
+        self.meta_prefix = f"{self.column_name}."
 
         schema_out = schema_tools.get_field_schema(schema_in.field(self.column_name))
         # remove fields that will not be in the schema
         _meta = self.meta or []
         for field in schema_out:
-            if not field.name.startswith((self.record_prefix, *[f'{self.meta_prefix}{m}' for m in meta or []])):
+            if not field.name.startswith((self.record_prefix, *[f"{self.meta_prefix}{m}" for m in meta or []])):
                 logging.debug(f"Removing field {field.name}")
                 schema_out = schema_out.remove(schema_out.get_field_index(field.name))
         self.schema_out = schema_out
@@ -55,17 +55,17 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
     def transform(self, X) -> pd.DataFrame:
         assert X.shape[1] == 1, "ColumnNormalizer can only handle a single column"
         Xt = X[self.column_name].dropna().explode().dropna()
-        if hasattr(Xt, 'compute'):
+        if hasattr(Xt, "compute"):
             Xt = Xt.map_partitions(self._json_normalize, meta=self.schema)
         else:
             Xt = self._json_normalize(Xt)
         # set dtypes
         for field in self.schema_out:
-            match field.metadata.get(b'usable_type'):
-                case b'unusable':
+            match field.metadata.get(b"usable_type"):
+                case b"unusable":
                     raise NotImplementedError
-                case b'numeric':
-                    Xt[field.name] = Xt[field.name].astype('float32')
+                case b"numeric":
+                    Xt[field.name] = Xt[field.name].astype("float32")
                 case _:
                     pass
         return Xt
