@@ -15,14 +15,12 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         schema_in: pa.Schema,
         record_path: str = None,
         meta: list[str | list[str]] = None,
-        metadata: str = None,  # FIXME: remove once the feature store metadata is updated
     ):
         super().__init__()
         self.column_name = column_name  # TODO: this can probably be deduced
         self.schema_in = schema_in
         self.record_path = record_path
         self.meta = meta
-        self.metadata = None  # FIXME: remove once the feature store metadata is updated
 
         if self.record_path is None:
             self.record_prefix = f'{self.column_name}.'
@@ -30,9 +28,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             self.record_prefix = f'{self.column_name}.{self.record_path}.'
         self.meta_prefix = f'{self.column_name}.'
 
-        schema_out = schema_tools.get_field_schema(
-            schema_in.field(self.column_name).with_metadata({'usable_type': metadata})
-        )
+        schema_out = schema_tools.get_field_schema(schema_in.field(self.column_name))
         # remove fields that will not be in the schema
         _meta = self.meta or []
         for field in schema_out:

@@ -76,7 +76,7 @@ class StandardOutcomes(BaseOutcomes):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         config = load_config()
-        self.binary_outcomes_list = config["data_sources"]["outcomes"]["binary_outcomes_list"]
+        self.binary_outcomes_list = tuple(config["data_sources"]["outcomes"]["binary_outcomes_list"])
 
     def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: datetime):
         _offsets = set(c.split('_')[-1] for c in df.columns if c.startswith(self.binary_outcomes_list))
