@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 import pyarrow as pa
 from pyarrow import parquet as pq
+from s3path import S3Path
 
 from src.common.data_type import compute_maybe
 from src.common.setup import load_config
@@ -10,9 +11,11 @@ from src.data_loading.data_source import BaseDataSource
 
 
 class FeatureStore(BaseDataSource):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, path: S3Path = None):
         config = load_config()
+        if path is None:
+            path = config["data_sources"]["feature_store"]["location"],
+        super().__init__(path=path)
         self.timestamp_column = config["data_sources"]["feature_store"]["timestamp_column"]
     
     def get_metadata(self):

@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 import pandas as pd
+from s3path import S3Path
 
 from src.common.data_type import compute_maybe
 from src.common.setup import load_config
@@ -14,9 +15,11 @@ from src.data_loading.data_source import BaseDataSource
 class BaseOutcomes(BaseDataSource, ABC):
     metadata: pd.Series
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, path: S3Path = None):
         config = load_config()
+        if path is None:
+            path = config["data_sources"]["outcomes"]["location"],
+        super().__init__(path=path)
         self.timestamp_column = config["data_sources"]["outcomes"]["timestamp_column"]
 
     def index_range(self, start: datetime | None, end: datetime | None) -> pd.Index:

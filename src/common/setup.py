@@ -12,7 +12,11 @@ def load_config() -> dict:
     project_root = Path(__file__).parent.parent.parent
     config_file = project_root / "config.toml"
     with open(config_file, "rb") as f:
-        return tomllib.load(f)
+        config = tomllib.load(f)
+    
+    config["data_sources"]["feature_store"]["location"] = S3Path(config["data_sources"]["feature_store"]["location"][4:])
+    config["data_sources"]["outcomes"]["location"] = S3Path(config["data_sources"]["outcomes"]["location"][4:])
+    return config
 
 
 def init_logging(config):
@@ -54,16 +58,3 @@ def init_services():
     init_logging(config)
     init_dask(config)
     init_minio(config)
-
-
-# TODO: Move this to config
-def s3_location_from_env() -> tuple[S3Path, S3Path]:
-    assert os.environ['FEATURE_STORE_LOCATION'].startswith('s3://')
-    feature_store_location = S3Path(os.environ['FEATURE_STORE_LOCATION'][4:])
-    assert feature_store_location.exists()
-
-    assert os.environ['OUTCOMES_LOCATION'].startswith('s3://')
-    outcomes_location = S3Path(os.environ['OUTCOMES_LOCATION'][4:])
-    assert outcomes_location.exists()
-    
-    return feature_store_location, outcomes_location
