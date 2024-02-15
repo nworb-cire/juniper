@@ -17,7 +17,7 @@ def get_preprocessor(
     categorical_pipeline: Pipeline | None = None,
     boolean_pipeline: Pipeline | None = None,
     timestamp_pipeline: Pipeline | None = None,
-):
+) -> ColumnTransformer:
     metadata = FeatureStoreMetadata(schema)
     
     transformers = []
@@ -51,6 +51,9 @@ def get_preprocessor(
                 record_path=feature_metadata.get("record_path"),
                 meta=feature_metadata.get("meta"),
             )
+            if all(field.metadata[b'usable_type'] == b'unusable' for field in cn.schema_out):
+                logging.warning(f"Array column {column} is unusable and will be dropped")
+                continue
             pipeline = Pipeline(steps=[
                 ("normalizer", cn),
                 ("preprocessor", get_preprocessor(cn.schema_out)),
@@ -58,6 +61,8 @@ def get_preprocessor(
             transformers.append((column, pipeline, [column]))
 
     column_transformer = ColumnTransformer(transformers=transformers, remainder='drop')
+    if len(transformers) == 0:
+        raise ValueError("No transformers found")
     logging.info(f"Preprocessor initialized with {len(transformers)} transformers")
     for transformer in transformers:
         logging.info(f"Transformer: {transformer[0]} ({len(transformer[2])} columns)")
