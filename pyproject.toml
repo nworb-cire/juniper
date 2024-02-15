@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "Juniper"
+version = "0.1.0"
+description = ""
+authors = ["Eric Brown"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+boto3 = "*"
+dask = {version = "*", extras = ["complete"]}
+dask_kubernetes = "*"
+dask_ml = "*"
+ipython = "*"
+jupyter = "*"
+matplotlib = "*"
+mypy = "*"
+numpy = "*"
+pandas = "*"
+# pandas ">=3.0.0"
+pyarrow = "*"
+pytest = "*"
+pytest-xdist = "*"
+s3path = "*"
+s3fs = ">=2023.3.0"  # https://github.com/dask/dask/issues/10276
+scikit-learn = "*"
+skl2onnx = "*"
+tabulate = "*"
+#torch = "^2.2.0"
+trino = "*"
+
+
+[tool.ruff]
+line-length = 120
+select = ["E", "F", "B"]
+
+[tool.codespell]
+skip = "*.sql"
+ignore-words-list = "fpr"
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,29 @@
+import pandas as pd
+
+from src.common.setup import init_services, s3_location_from_env
+from src.data_loading.feature_store import FeatureStore
+from src.data_loading.outcomes import StandardOutcomes
+from src.preprocessor.preprocessor import get_preprocessor
+from src.validation.time_series_split import TimeSeriesSplit
+
+if __name__ == '__main__':
+    init_services()
+
+    feature_store_location, outcomes_location = s3_location_from_env()
+    feature_store = FeatureStore(feature_store_location)
+    outcomes = StandardOutcomes(outcomes_location)
+
+    cv_split = TimeSeriesSplit(pd.Timedelta(days=30), n_splits=3)
+    for train_idx, test_idx, train_time_end in cv_split.split(outcomes):
+        train, test = feature_store.load_train_test(train_idx, test_idx)
+        y_train, y_test = outcomes.load_train_test(train_idx, test_idx, train_time_end)
+
+        preprocessor = get_preprocessor(schema=feature_store.schema)
+        x_train = preprocessor.fit_transform(train)
+        x_test = preprocessor.transform(test)
+
+        # model = Model()
+        # model.fit(x_train, y_train)
+        # preds = model.predict(x_test)
+        # score = model.score(preds, y_test)
+        # cv_split.add_score(score)
