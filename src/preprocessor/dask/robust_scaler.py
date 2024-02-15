@@ -8,6 +8,8 @@ from dask_ml.preprocessing.data import _handle_zeros_in_scale
 from dask_ml.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 
+from src.common.data_type import compute_maybe
+
 
 class RobustScaler(sklearn.preprocessing.RobustScaler):
 
@@ -34,7 +36,7 @@ class RobustScaler(sklearn.preprocessing.RobustScaler):
         self.boolean_columns = X.select_dtypes(include=bool).columns
         self.non_boolean_columns = X.columns.difference(self.boolean_columns)
         # TODO: Implement https://dl.acm.org/doi/10.1145/375663.375670
-        quantiles = X[self.non_boolean_columns].quantile([q_min / 100.0, 0.5, q_max / 100.0]).values.T.compute()
+        quantiles = compute_maybe(X[self.non_boolean_columns].quantile([q_min / 100.0, 0.5, q_max / 100.0]).values.T)
 
         self.center_: List[float] = quantiles[:, 1]
         self.scale_: List[float] = quantiles[:, 2] - quantiles[:, 0]
