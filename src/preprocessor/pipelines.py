@@ -29,7 +29,10 @@ def get_default_categorical_pipeline(columns: list[str]) -> Pipeline:
 def get_default_boolean_pipeline(columns: list[str]) -> Pipeline:
     return Pipeline(
         steps=[
-            ("typecast", CastTransformer()),
+            ("typecast", Pipeline(steps=[
+                ("bool", CastTransformer(dtype="boolean")),
+                ("float", CastTransformer()),
+            ])),
             ("imputer", ConstantImputer(fill_value=-1)),
         ]
     )
