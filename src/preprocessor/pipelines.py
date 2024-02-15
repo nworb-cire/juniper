@@ -4,6 +4,7 @@ from dask_ml.preprocessing import Categorizer, OrdinalEncoder
 from sklearn.pipeline import Pipeline
 
 from src.preprocessor.dask.cast_transformer import CastTransformer
+from src.preprocessor.dask.column_transformer import ColumnTransformer
 from src.preprocessor.dask.constant_imputer import ConstantImputer
 from src.preprocessor.dask.robust_scaler import RobustScaler
 
@@ -12,12 +13,21 @@ def get_default_numeric_pipeline(columns: list[str]) -> Pipeline:
     return Pipeline(
         steps=[
             ("imputer", ConstantImputer(add_indicator=True)),
-            ("scaler", RobustScaler(quantile_range=(1.0, 99.0))),
+            ("scaler", ColumnTransformer(
+                transformers=[
+                    ("numeric", Pipeline(steps=[
+                        ("typecast", CastTransformer()),
+                        ("scaler", RobustScaler(quantile_range=(1.0, 99.0))),
+                    ]), columns)   # Scale only the numeric columns
+                ],
+                remainder="passthrough",
+            )),
             ("typecast", CastTransformer()),
         ]
     )
 
 def get_default_categorical_pipeline(columns: list[str]) -> Pipeline:
+    # TODO: Handle "not before seen" categories in deployment 
     return Pipeline(
         steps=[
             ("categorizer", Categorizer(columns=pd.Index(columns))),

@@ -32,11 +32,8 @@ class RobustScaler(sklearn.preprocessing.RobustScaler):
 
         if not isinstance(X, dd.DataFrame):
             raise NotImplementedError(f"Only Dask DataFrame is supported, got {type(X)}")
-        # If the scaler is downstream of another transformer, e.g. an imputer, then all values may not be numerical
-        self.boolean_columns = X.select_dtypes(include=bool).columns
-        self.non_boolean_columns = X.columns.difference(self.boolean_columns)
         # TODO: Implement https://dl.acm.org/doi/10.1145/375663.375670
-        quantiles = compute_maybe(X[self.non_boolean_columns].quantile([q_min / 100.0, 0.5, q_max / 100.0]).values.T)
+        quantiles = compute_maybe(X.quantile([q_min / 100.0, 0.5, q_max / 100.0]).values.T)
 
         self.center_: List[float] = quantiles[:, 1]
         self.scale_: List[float] = quantiles[:, 2] - quantiles[:, 0]
@@ -72,14 +69,10 @@ class RobustScaler(sklearn.preprocessing.RobustScaler):
         #     if self.with_scaling:
         #         inplace_column_scale(X, 1.0 / self.scale_)
         # else:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "Concatenating", UserWarning)
-            if self.with_centering:
-                Xt = X[self.non_boolean_columns] - self.center_
-                X = dd.concat([Xt, X[self.boolean_columns]], axis=1)
-            if self.with_scaling:
-                Xt = X[self.non_boolean_columns] / self.scale_
-                X = dd.concat([Xt, X[self.boolean_columns]], axis=1)
+        if self.with_centering:
+            X = X - self.center_
+        if self.with_scaling:
+            X = X / self.scale_
         return X
 
     def inverse_transform(
@@ -103,12 +96,8 @@ class RobustScaler(sklearn.preprocessing.RobustScaler):
         #     if self.with_scaling:
         #         inplace_column_scale(X, self.scale_)
         # else:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "Concatenating", UserWarning)
-            if self.with_scaling:
-                Xt = X[self.non_boolean_columns] * self.scale_
-                X = dd.concat([Xt, X[self.boolean_columns]], axis=1)
-            if self.with_centering:
-                Xt = X[self.non_boolean_columns] + self.center_
-                X = dd.concat([Xt, X[self.boolean_columns]], axis=1)
+        if self.with_scaling:
+            X = X * self.scale_
+        if self.with_centering:
+            X = X + self.center_
         return X
