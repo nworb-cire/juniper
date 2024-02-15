@@ -1,4 +1,6 @@
 import warnings
+from itertools import chain
+from typing import Literal
 
 import dask.dataframe as dd
 import sklearn.compose
@@ -10,6 +12,25 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer):
     
     __doc__ = sklearn.compose.ColumnTransformer.__doc__
     
+    def _fit_or_transform(self, X, y=None, func: Literal['fit_transform', 'transform'] = None):
+        jobs = []
+        for _, transformer, columns in self.transformers:
+            if isinstance(transformer, str):
+                raise NotImplementedError
+            _func = getattr(transformer, func)
+            jobs.append(
+                delayed(_func)(X[columns])
+            )
+        Xs = Parallel(
+            n_jobs=len(self.transformers),
+            backend='threading',
+        )(jobs)
+
+        if self.remainder == "passthrough":
+            Xs.append(X[self._passthrough_columns])
+            
+        return self._hstack(list(Xs))
+    
     def fit_transform(self, X, y=None, **params):
         self._check_feature_names(X, reset=True)
 
@@ -19,24 +40,10 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer):
 
         self._validate_column_callables(X)
         self._validate_remainder(X)
-        _all_transformer_columns = []
+        _all_transformer_columns = chain(*[columns for _, _, columns in self.transformers])
+        self._passthrough_columns = [c for c in X.columns if c not in _all_transformer_columns]        
 
-        jobs = []
-        for _, transformer, columns in self.transformers:
-            if isinstance(transformer, str):
-                raise NotImplementedError
-            jobs.append(
-                delayed(transformer.fit_transform)(X[columns])
-            )
-            _all_transformer_columns.extend(columns)
-        Xs = Parallel(
-            n_jobs=len(self.transformers),
-            backend='threading',
-        )(jobs)
-
-        if self.remainder == "passthrough":
-            self._passthrough_columns = [c for c in X.columns if c not in _all_transformer_columns]
-            Xs.append(X[self._passthrough_columns])
+        Xt = self._fit_or_transform(X, y, func='fit_transform')
 
         self.sparse_output_ = False
 
@@ -52,12 +59,12 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer):
         # self._validate_output(Xs)
         # self._record_output_indices(Xs)
 
-        return self._hstack(list(Xs))
+        return Xt
 
     def transform(self, X, **params):
         if not hasattr(X, "iloc"):
             raise ValueError("ColumnTransformer only accepts Pandas DataFrames or Dask DataFrames/Series as input")
-        return super().transform(X, **params)
+        return self._fit_or_transform(X, func='transform')
 
     def _hstack(self, Xs):
         with warnings.catch_warnings():
