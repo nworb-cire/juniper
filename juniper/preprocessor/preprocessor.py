@@ -3,11 +3,11 @@ import logging
 import pyarrow as pa
 from sklearn.pipeline import Pipeline
 
-from src.common.setup import load_config
-from src.preprocessor.dask.column_normalizer import ColumnNormalizer
-from src.preprocessor.dask.column_transformer import ColumnTransformer
-from src.preprocessor.metadata import FeatureStoreMetadata
-from src.preprocessor.pipelines import (
+from juniper.common.setup import load_config
+from juniper.preprocessor.dask.column_normalizer import ColumnNormalizer
+from juniper.preprocessor.dask.column_transformer import ColumnTransformer
+from juniper.preprocessor.metadata import FeatureStoreMetadata
+from juniper.preprocessor.pipelines import (
     get_default_numeric_pipeline,
     get_default_categorical_pipeline,
     get_default_boolean_pipeline,

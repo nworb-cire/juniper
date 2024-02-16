@@ -3,10 +3,10 @@ import pyarrow as pa
 from dask_ml.preprocessing import Categorizer, OrdinalEncoder
 from sklearn.pipeline import Pipeline
 
-from src.preprocessor.dask.cast_transformer import CastTransformer
-from src.preprocessor.dask.column_transformer import ColumnTransformer
-from src.preprocessor.dask.constant_imputer import ConstantImputer
-from src.preprocessor.dask.robust_scaler import RobustScaler
+from juniper.preprocessor.dask.cast_transformer import CastTransformer
+from juniper.preprocessor.dask.column_transformer import ColumnTransformer
+from juniper.preprocessor.dask.constant_imputer import ConstantImputer
+from juniper.preprocessor.dask.robust_scaler import RobustScaler
 
 
 def get_default_numeric_pipeline(columns: list[str]) -> Pipeline:

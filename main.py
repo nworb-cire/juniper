@@ -1,10 +1,10 @@
 import pandas as pd
 
-from src.common.setup import init_services
-from src.data_loading.feature_store import FeatureStore
-from src.data_loading.outcomes import StandardOutcomes
-from src.preprocessor.preprocessor import get_preprocessor
-from src.validation.time_series_split import TimeSeriesSplit
+from juniper.common.setup import init_services
+from juniper.data_loading.feature_store import FeatureStore
+from juniper.data_loading.outcomes import StandardOutcomes
+from juniper.preprocessor.preprocessor import get_preprocessor
+from juniper.validation.time_series_split import TimeSeriesSplit
 
 if __name__ == "__main__":
     init_services()

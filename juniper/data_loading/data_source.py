@@ -7,7 +7,7 @@ import pandas as pd
 from dask import dataframe as dd
 from s3path import S3Path
 
-from src.common.setup import load_config
+from juniper.common.setup import load_config
 
 
 class BaseDataSource(ABC):

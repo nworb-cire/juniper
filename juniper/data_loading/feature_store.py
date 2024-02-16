@@ -5,9 +5,9 @@ import pyarrow as pa
 from pyarrow import parquet as pq
 from s3path import S3Path
 
-from src.common.data_type import compute_maybe
-from src.common.setup import load_config
-from src.data_loading.data_source import BaseDataSource
+from juniper.common.data_type import compute_maybe
+from juniper.common.setup import load_config
+from juniper.data_loading.data_source import BaseDataSource
 
 
 class FeatureStore(BaseDataSource):

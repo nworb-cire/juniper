@@ -4,8 +4,8 @@ import pandas as pd
 import pyarrow as pa
 from sklearn.base import TransformerMixin, BaseEstimator
 
-from src.common import schema_tools
-from src.data_loading.json_normalize import json_normalize
+from juniper.common import schema_tools
+from juniper.data_loading.json_normalize import json_normalize
 
 
 class ColumnNormalizer(TransformerMixin, BaseEstimator):

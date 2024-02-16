@@ -1,6 +1,6 @@
 import pyarrow as pa
 
-from src.common.setup import load_config
+from juniper.common.setup import load_config
 
 
 class FeatureStoreMetadata:

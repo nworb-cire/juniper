@@ -7,7 +7,7 @@ from dask_ml.preprocessing.data import _handle_zeros_in_scale
 from dask_ml.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 
-from src.common.data_type import compute_maybe
+from juniper.common.data_type import compute_maybe
 
 
 class RobustScaler(sklearn.preprocessing.RobustScaler):

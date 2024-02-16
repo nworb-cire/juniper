@@ -4,8 +4,8 @@ from datetime import datetime
 
 import pandas as pd
 
-from src.common.data_type import compute_maybe
-from src.data_loading.outcomes import BaseOutcomes
+from juniper.common.data_type import compute_maybe
+from juniper.data_loading.outcomes import BaseOutcomes
 
 
 class TimeSeriesSplit:
