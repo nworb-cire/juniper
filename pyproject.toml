@@ -32,11 +32,10 @@ trino = "*"
 
 [tool.ruff]
 line-length = 120
-select = ["E", "F", "B"]
+select = ["E", "W", "F", "B"]
 
 [tool.codespell]
 skip = "*.sql"
-ignore-words-list = "fpr"
 
 [tool.mypy]
 ignore_missing_imports = true
