@@ -22,7 +22,7 @@ class BaseFeatureStore(BaseDataSource, ABC):
 
     def get_metadata(self):
         self.schema = self.get_schema()
-        self.metadata = self.get_feature_metadata()
+        self.metadata = self.get_feature_metadata(self.schema)
 
     def _load_train_test(
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
@@ -41,8 +41,9 @@ class BaseFeatureStore(BaseDataSource, ABC):
     def get_schema(self) -> pa.Schema:
         pass
 
+    @classmethod
     @abstractmethod
-    def get_feature_metadata(self) -> dict[FeatureType, list[str]]:
+    def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
         pass
 
 
@@ -62,13 +63,14 @@ class ParquetFeatureStore(BaseFeatureStore):
             ),
         )
 
-    def get_feature_metadata(self) -> dict[FeatureType, list[str]]:
+    @classmethod
+    def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
         columns = defaultdict(list)
 
         enabled_feature_types = load_config()["data_sources"]["feature_store"]["enabled_feature_types"]
 
-        for field_name in self.schema.names:
-            field = self.schema.field(field_name)
+        for field_name in schema.names:
+            field = schema.field(field_name)
             if isinstance(field.type, pa.lib.ListType):
                 if FeatureType.ARRAY in enabled_feature_types:
                     columns[FeatureType.ARRAY].append(field_name)
