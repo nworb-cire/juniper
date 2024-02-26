@@ -9,6 +9,7 @@ class FeatureType(enum.StrEnum):
     BOOLEAN = "boolean"
     TIMESTAMP = "timestamp"
     STRING = "string"
+    ARRAY = "array"
 
 
 T = TypeVar("T")

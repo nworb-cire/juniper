@@ -1,7 +1,7 @@
 import pandas as pd
 
 from juniper.common.setup import init_services
-from juniper.data_loading.feature_store import FeatureStore
+from juniper.data_loading.feature_store import ParquetFeatureStore
 from juniper.data_loading.outcomes import StandardOutcomes
 from juniper.preprocessor.preprocessor import get_preprocessor
 from juniper.validation.time_series_split import TimeSeriesSplit
@@ -9,7 +9,7 @@ from juniper.validation.time_series_split import TimeSeriesSplit
 if __name__ == "__main__":
     init_services()
 
-    feature_store = FeatureStore()
+    feature_store = ParquetFeatureStore()
     outcomes = StandardOutcomes()
 
     cv_split = TimeSeriesSplit(pd.Timedelta(days=30), n_splits=3)
@@ -17,7 +17,7 @@ if __name__ == "__main__":
         train, test = feature_store.load_train_test(train_idx, test_idx)
         y_train, y_test = outcomes.load_train_test(train_idx, test_idx, train_time_end)
 
-        preprocessor = get_preprocessor(schema=feature_store.schema)
+        preprocessor = get_preprocessor(feature_store=feature_store)
         x_train = preprocessor.fit_transform(train)
         x_test = preprocessor.transform(test)
 

@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+from collections import defaultdict
 from datetime import datetime
 
 import pandas as pd
@@ -5,12 +7,12 @@ import pyarrow as pa
 from pyarrow import parquet as pq
 from s3path import S3Path
 
-from juniper.common.data_type import compute_maybe
+from juniper.common.data_type import compute_maybe, FeatureType
 from juniper.common.setup import load_config
 from juniper.data_loading.data_source import BaseDataSource
 
 
-class FeatureStore(BaseDataSource):
+class BaseFeatureStore(BaseDataSource, ABC):
     def __init__(self, path: S3Path = None):
         config = load_config()
         if path is None:
@@ -19,20 +21,8 @@ class FeatureStore(BaseDataSource):
         super().__init__(path=path)
 
     def get_metadata(self):
-        try:
-            path = next(self.path.iterdir())
-        except StopIteration:
-            path = self.path
-        config = load_config()
-        schema = pq.read_schema(
-            path.as_posix()[1:],
-            filesystem=pa.fs.S3FileSystem(
-                endpoint_override=config["minio"]["endpoint_url"],
-                access_key=config["minio"]["aws_access_key_id"],
-                secret_key=config["minio"]["aws_secret_access_key"],
-            ),
-        )
-        self.schema = schema
+        self.schema = self.get_schema()
+        self.metadata = self.get_feature_metadata()
 
     def _load_train_test(
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
@@ -46,3 +36,60 @@ class FeatureStore(BaseDataSource):
         else:
             test = None
         return train, test
+
+    @abstractmethod
+    def get_schema(self) -> pa.Schema:
+        pass
+
+    @abstractmethod
+    def get_feature_metadata(self) -> dict[FeatureType, list[str]]:
+        pass
+
+
+class ParquetFeatureStore(BaseFeatureStore):
+    def get_schema(self) -> pa.Schema:
+        try:
+            path = next(self.path.iterdir())
+        except StopIteration:
+            path = self.path
+        config = load_config()
+        return pq.read_schema(
+            path.as_posix()[1:],
+            filesystem=pa.fs.S3FileSystem(
+                endpoint_override=config["minio"]["endpoint_url"],
+                access_key=config["minio"]["aws_access_key_id"],
+                secret_key=config["minio"]["aws_secret_access_key"],
+            ),
+        )
+
+    def get_feature_metadata(self) -> dict[FeatureType, list[str]]:
+        columns = defaultdict(list)
+
+        enabled_feature_types = load_config()["data_sources"]["feature_store"]["enabled_feature_types"]
+
+        for field_name in self.schema.names:
+            field = self.schema.field(field_name)
+            if isinstance(field.type, pa.lib.ListType):
+                if FeatureType.ARRAY in enabled_feature_types:
+                    columns[FeatureType.ARRAY].append(field_name)
+                    continue
+            match field.metadata[b"usable_type"].decode():
+                case FeatureType.NUMERIC:
+                    if FeatureType.BOOLEAN in enabled_feature_types and field.type == pa.bool_():
+                        columns[FeatureType.BOOLEAN].append(field_name)
+                    else:
+                        if FeatureType.NUMERIC in enabled_feature_types:
+                            columns[FeatureType.NUMERIC].append(field_name)
+                case FeatureType.CATEGORICAL:
+                    if FeatureType.CATEGORICAL in enabled_feature_types:
+                        columns[FeatureType.CATEGORICAL].append(field_name)
+                case FeatureType.BOOLEAN:
+                    if FeatureType.BOOLEAN in enabled_feature_types:
+                        columns[FeatureType.BOOLEAN].append(field_name)
+                case FeatureType.TIMESTAMP:
+                    if FeatureType.TIMESTAMP in enabled_feature_types:
+                        columns[FeatureType.TIMESTAMP].append(field_name)
+                case _:
+                    columns[FeatureType.UNUSABLE].append(field_name)
+
+        return columns

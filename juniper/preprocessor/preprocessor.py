@@ -1,12 +1,12 @@
 import logging
 
-import pyarrow as pa
 from sklearn.pipeline import Pipeline
 
+from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
+from juniper.data_loading.feature_store import BaseFeatureStore
 from juniper.preprocessor.dask.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.dask.column_transformer import ColumnTransformer
-from juniper.preprocessor.metadata import FeatureStoreMetadata
 from juniper.preprocessor.pipelines import (
     get_default_numeric_pipeline,
     get_default_categorical_pipeline,
@@ -16,46 +16,45 @@ from juniper.preprocessor.pipelines import (
 
 
 def get_preprocessor(
-    schema: pa.Schema,
+    feature_store: BaseFeatureStore,
     numeric_pipeline: Pipeline | None = None,
     categorical_pipeline: Pipeline | None = None,
     boolean_pipeline: Pipeline | None = None,
     timestamp_pipeline: Pipeline | None = None,
 ) -> ColumnTransformer:
-    metadata = FeatureStoreMetadata(schema)
 
     transformers = []
-    if columns := metadata.numeric_columns:
+    if columns := feature_store.metadata.get(FeatureType.NUMERIC):
         if numeric_pipeline is None:
             numeric_pipeline = get_default_numeric_pipeline(columns)
         transformers.append(("numeric", numeric_pipeline, columns))
 
-    if columns := metadata.categorical_columns:
+    if columns := feature_store.metadata.get(FeatureType.CATEGORICAL):
         if categorical_pipeline is None:
             categorical_pipeline = get_default_categorical_pipeline(columns)
         transformers.append(("categorical", categorical_pipeline, columns))
 
-    if columns := metadata.boolean_columns:
+    if columns := feature_store.metadata.get(FeatureType.BOOLEAN):
         if boolean_pipeline is None:
             boolean_pipeline = get_default_boolean_pipeline(columns)
         transformers.append(("boolean", boolean_pipeline, columns))
 
-    if columns := metadata.timestamp_columns:
+    if columns := feature_store.metadata.get(FeatureType.TIMESTAMP):
         if timestamp_pipeline is None:
             timestamp_pipeline = get_default_timestamp_pipeline(columns)
         transformers.append(("timestamp", timestamp_pipeline, columns))
 
-    if columns := metadata.array_columns:
+    if columns := feature_store.metadata.get(FeatureType.ARRAY):
         config = load_config()
         for column in columns:
             feature_metadata = config["data_sources"]["feature_store"]["feature_meta"].get(column, {})
             cn = ColumnNormalizer(
                 column_name=column,
-                schema_in=schema,
+                schema_in=feature_store.schema,
                 record_path=feature_metadata.get("record_path"),
                 meta=feature_metadata.get("meta"),
             )
-            if all(field.metadata[b"usable_type"] == b"unusable" for field in cn.schema_out):
+            if all(field.metadata[b"usable_type"].decode() == FeatureType.UNUSABLE for field in cn.schema_out):
                 logging.warning(f"Array column {column} is unusable and will be dropped")
                 continue
             pipeline = Pipeline(
