@@ -11,7 +11,9 @@ def _get_flattened_fields(
     fields = []
     for field in list_type.value_field.flatten():
         name = field.name.replace("element", record_path)
-        if metadata is not None:
+        if isinstance(metadata, str):
+            _metadata = metadata
+        elif metadata is not None:
             _metadata = metadata.get(field.name.replace("element.", ""))
         else:
             _metadata = None
@@ -36,7 +38,5 @@ def get_field_schema(field: pa.lib.Field) -> pa.Schema:
             metadata = None
     else:
         metadata = None
-    if isinstance(metadata, str):
-        return pa.schema([field.with_metadata({"usable_type": metadata})])
     fields = _get_flattened_fields(field.type, field.name, metadata=metadata)
     return pa.schema(fields)
