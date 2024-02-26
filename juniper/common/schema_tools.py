@@ -8,9 +8,9 @@ def _get_flattened_fields(
 ) -> list[tuple[str, pa.lib.DataType]]:
     fields = []
     for field in list_type.value_field.flatten():
-        name = field.name.replace("item", record_path)
+        name = field.name.replace("element", record_path)
         if metadata is not None:
-            _metadata = metadata.get(field.name.replace("item.", ""))
+            _metadata = metadata.get(field.name.replace("element.", ""))
         else:
             _metadata = None
         if isinstance(field.type, pa.lib.ListType):
