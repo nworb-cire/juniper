@@ -74,7 +74,7 @@ def get_preprocessor(
     column_transformer = ColumnTransformer(transformers=transformers, remainder="drop", n_jobs=-1)
     if len(transformers) == 0:
         raise ValueError("No transformers found")
-    logging.info(f"Preprocessor initialized with {len(transformers)} transformers")
+    logging.debug(f"Preprocessor initialized with {len(transformers)} transformers")
     for transformer in transformers:
-        logging.info(f"Transformer: {transformer[0]} ({len(transformer[2])} columns)")
+        logging.debug(f"Transformer: {transformer[0]} ({len(transformer[2])} columns)")
     return column_transformer
