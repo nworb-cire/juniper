@@ -61,10 +61,10 @@ def test_normalize_array(feature_store):
     assert isinstance(Xt, pd.DataFrame)
     expected = pd.DataFrame(
         {
-            "arr.a": [1.0, 3.0, 5.0, 7.0],
-            "arr.b": [2.0, 4.0, 6.0, 8.0],
+            "arr.a": [1.0, 3.0, 5.0, 7.0, 9.0],
+            "arr.b": [2.0, 4.0, 6.0, 8.0, 10.0],
         },
-        index=pd.Index([1, 1, 4, 4], name="id"),
+        index=pd.Index([1, 1, 4, 4, 4], name="id"),
     )
     pd.testing.assert_frame_equal(Xt.astype(float), expected.astype(float))
 
@@ -77,7 +77,13 @@ def test_fit_array_preprocessor(feature_store):
     Xt = preprocessor.fit_transform(df[columns])
     assert Xt is not None
     expected = np.array(
-        [[-0.5102041, -0.5102041], [-0.17006803, -0.17006803], [0.17006803, 0.17006803], [0.5102041, 0.5102041]]
+        [
+            [-0.5102041, -0.5102041],
+            [-0.25510204, -0.25510204],
+            [0.0, 0.0],
+            [0.25510204, 0.25510204],
+            [0.5102041, 0.5102041],
+        ]
     )
     assert np.allclose(Xt, expected)
 
