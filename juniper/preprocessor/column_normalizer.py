@@ -55,10 +55,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
     def transform(self, X) -> pd.DataFrame:
         assert X.shape[1] == 1, "ColumnNormalizer can only handle a single column"
         Xt = X[self.column_name].dropna().explode().dropna()
-        if hasattr(Xt, "compute"):
-            Xt = Xt.map_partitions(self._json_normalize, meta=self.schema)
-        else:
-            Xt = self._json_normalize(Xt)
+        Xt = self._json_normalize(Xt)
         # set dtypes
         for field in self.schema_out:
             match field.metadata.get(b"usable_type"):

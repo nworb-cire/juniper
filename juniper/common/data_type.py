@@ -1,5 +1,4 @@
 import enum
-from typing import TypeVar
 
 
 class FeatureType(enum.StrEnum):
@@ -10,12 +9,3 @@ class FeatureType(enum.StrEnum):
     TIMESTAMP = "timestamp"
     STRING = "string"
     ARRAY = "array"
-
-
-T = TypeVar("T")
-
-
-def compute_maybe(df: T) -> T:
-    if hasattr(df, "compute"):
-        return df.compute()
-    return df
