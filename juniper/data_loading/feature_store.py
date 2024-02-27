@@ -7,7 +7,7 @@ import pyarrow as pa
 from pyarrow import parquet as pq
 from s3path import S3Path
 
-from juniper.common.data_type import compute_maybe, FeatureType
+from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
 from juniper.data_loading.data_source import BaseDataSource
 
@@ -27,12 +27,12 @@ class BaseFeatureStore(BaseDataSource, ABC):
     def _load_train_test(
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-        df = self.read_parquet()
-        train_idx = compute_maybe(train_idx)
-        train = df.loc[train_idx]
+        df = self.read_parquet(
+            filters=[(self.index_column, "in", train_idx.union(test_idx).tolist())],
+        )
+        train = df.reindex(train_idx)
         if test_idx is not None:
-            test_idx = compute_maybe(test_idx)
-            test = df.loc[test_idx]
+            test = df.reindex(test_idx)
         else:
             test = None
         return train, test

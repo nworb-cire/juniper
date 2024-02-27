@@ -1,13 +1,13 @@
 import logging
 
 import pyarrow as pa
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
 from juniper.data_loading.feature_store import BaseFeatureStore
-from juniper.preprocessor.dask.column_normalizer import ColumnNormalizer
-from juniper.preprocessor.dask.column_transformer import ColumnTransformer
+from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.pipelines import (
     get_default_numeric_pipeline,
     get_default_categorical_pipeline,

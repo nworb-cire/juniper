@@ -7,10 +7,6 @@ authors = ["Eric Brown"]
 [tool.poetry.dependencies]
 python = "^3.11"
 boto3 = "*"
-bokeh = "!=3.0.*,>=2.4.2"
-dask = {version = "*", extras = ["complete"]}
-dask_kubernetes = "*"
-dask_ml = "*"
 ipython = "*"
 jupyter = "*"
 matplotlib = "*"

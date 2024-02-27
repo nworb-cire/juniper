@@ -1,12 +1,11 @@
+import numpy as np
 import pandas as pd
-import pyarrow as pa
-from dask_ml.preprocessing import Categorizer, OrdinalEncoder
+from skl2onnx.sklapi import CastTransformer
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import RobustScaler, OrdinalEncoder
 
-from juniper.preprocessor.dask.cast_transformer import CastTransformer
-from juniper.preprocessor.dask.column_transformer import ColumnTransformer
-from juniper.preprocessor.dask.constant_imputer import ConstantImputer
-from juniper.preprocessor.dask.robust_scaler import RobustScaler
+from juniper.preprocessor.constant_imputer import ConstantImputer
 
 
 def get_default_numeric_pipeline(columns: list[str]) -> Pipeline:
@@ -40,7 +39,8 @@ def get_default_categorical_pipeline(columns: list[str]) -> Pipeline:
     # TODO: Handle "not before seen" categories in deployment
     return Pipeline(
         steps=[
-            ("categorizer", Categorizer(columns=pd.Index(columns))),
+            # ("categorizer", Categorizer(columns=pd.Index(columns))),
+            ("imputer", ConstantImputer(fill_value="_missing")),
             ("encoder", OrdinalEncoder()),
             ("typecast", CastTransformer()),
         ]
@@ -50,26 +50,28 @@ def get_default_categorical_pipeline(columns: list[str]) -> Pipeline:
 def get_default_boolean_pipeline(columns: list[str]) -> Pipeline:
     return Pipeline(
         steps=[
-            (
-                "typecast",
-                Pipeline(
-                    steps=[
-                        ("bool", CastTransformer(dtype="boolean")),
-                        ("float", CastTransformer()),
-                    ]
-                ),
-            ),
+            ("nan_imputer", ConstantImputer(fill_value=np.nan)),
+            ("float", CastTransformer()),
             ("imputer", ConstantImputer(fill_value=-1)),
         ]
     )
 
 
 def get_default_timestamp_pipeline(columns: list[str]) -> Pipeline:
-    unix_epoch = pa.scalar(0, type=pa.timestamp("ns", tz="UTC"))
+    unix_epoch = pd.Timestamp("1970-01-01T00:00:00Z")
     return Pipeline(
         steps=[
             ("imputer", ConstantImputer(fill_value=unix_epoch, missing_values=pd.NA, add_indicator=True)),
-            ("typecast", CastTransformer()),
+            (
+                "typecast",
+                Pipeline(
+                    steps=[
+                        ("np_datetime", CastTransformer(dtype=np.datetime64)),
+                        ("np_int", CastTransformer(dtype=np.int64)),
+                        ("float", CastTransformer()),
+                    ]
+                ),
+            ),
             ("scaler", RobustScaler()),
         ]
     )

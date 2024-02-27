@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 import pandas as pd
-from dask import dataframe as dd
 from s3path import S3Path
 
 from juniper.common.setup import load_config
@@ -23,19 +22,23 @@ class BaseDataSource(ABC):
         self.index_column = config["data_sources"]["index_column"]
         self.get_metadata()
 
-    def read_parquet(self, path: S3Path = None, columns: list[str] = None, index_column: str = None) -> pd.DataFrame:
+    def read_parquet(
+        self,
+        path: S3Path = None,
+        columns: list[str] = None,
+        filters: list[tuple] | list[list[tuple]] | None = None,
+    ) -> pd.DataFrame:
         if path is None:
             path = self.path
-        if index_column is None:
-            index_column = self.index_column
         config = load_config()
-        return dd.read_parquet(
+        return pd.read_parquet(
             path.as_uri(),
             columns=columns,
-            parquet_file_extension=None,
-            index=index_column,
+            # parquet_file_extension=None,
+            # index=index_column,
             dtype_backend="pyarrow",
-            blocksize="1024MiB",
+            # blocksize="1024MiB",
+            filters=filters,
             storage_options={
                 "key": config["minio"]["aws_access_key_id"],
                 "secret": config["minio"]["aws_secret_access_key"],

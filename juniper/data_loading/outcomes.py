@@ -7,7 +7,6 @@ from datetime import datetime
 import pandas as pd
 from s3path import S3Path
 
-from juniper.common.data_type import compute_maybe
 from juniper.common.setup import load_config
 from juniper.data_loading.data_source import BaseDataSource
 
@@ -92,15 +91,15 @@ class StandardOutcomes(BaseOutcomes):
     def _load_train_test(
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-        df = self.read_parquet()
+        df = self.read_parquet(
+            filters=[(self.index_column, "in", train_idx.union(test_idx).tolist())],
+        )
         columns = [c for c in df.columns if c.startswith(self.binary_outcomes_list) and re.match(r"\w+_\d{1,4}$", c)]
         df = df[columns + [self.timestamp_column]]
-        train_idx = compute_maybe(train_idx)
-        train = df.loc[train_idx].drop(columns=[self.timestamp_column])
+        train = df.reindex(train_idx)
+        train = self.filter_training_outcomes(train, train_time_end).drop(columns=[self.timestamp_column])
         if test_idx is not None:
-            test_idx = compute_maybe(test_idx)
-            test = df.loc[test_idx]
-            test = self.filter_training_outcomes(test, train_time_end).drop(columns=[self.timestamp_column])
+            test = df.reindex(test_idx)
         else:
             test = None
         return train, test

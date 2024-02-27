@@ -4,7 +4,6 @@ from datetime import datetime
 
 import pandas as pd
 
-from juniper.common.data_type import compute_maybe
 from juniper.data_loading.outcomes import BaseOutcomes
 
 
@@ -30,7 +29,6 @@ class TimeSeriesSplit:
     ) -> Generator[tuple[pd.Index, pd.Index, datetime], None, None]:
         if end_ts is None:
             end_ts = outcomes.max_timestamp()
-        end_ts = compute_maybe(end_ts)
         for i in range(self.n_splits):
             holdout_time_end = end_ts - (self.n_splits - i) * self.timedelta
             holdout_time_begin = holdout_time_end - pd.Timedelta(days=self.holdout_time)
