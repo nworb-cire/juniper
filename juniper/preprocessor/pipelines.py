@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from skl2onnx.sklapi import CastTransformer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, OrdinalEncoder
 
+from juniper.preprocessor.cast_transformer import CastTransformer
 from juniper.preprocessor.constant_imputer import ConstantImputer
 
 
