@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -21,9 +20,7 @@ class FeatureStoreTest(ParquetFeatureStore):
 
 
 @pytest.fixture
-def feature_store():
-    # TODO: move this to a fixture
-    os.environ["CONFIG_LOCATION"] = "tests/test_config.toml"
+def feature_store(config):
     return FeatureStoreTest()
 
 

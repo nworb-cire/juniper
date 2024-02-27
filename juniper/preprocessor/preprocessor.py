@@ -53,7 +53,7 @@ def get_preprocessor(
     if columns := metadata.get(FeatureType.ARRAY):
         config = load_config()
         for column in columns:
-            feature_metadata = config["data_sources"]["feature_store"]["feature_meta"].get(column, {})
+            feature_metadata = config["data_sources"]["feature_store"].get("feature_meta", {}).get(column, {})
             cn = ColumnNormalizer(
                 column_name=column,
                 schema_in=feature_store.schema,

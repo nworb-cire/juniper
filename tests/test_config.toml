@@ -9,7 +9,7 @@ enabled_feature_types = [
     "categorical",
     "boolean",
     "timestamp",
-#    "array",
+    "array",
 ]
 
 [data_sources.outcomes]
