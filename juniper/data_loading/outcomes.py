@@ -8,10 +8,10 @@ import pandas as pd
 from s3path import S3Path
 
 from juniper.common.setup import load_config
-from juniper.data_loading.data_source import BaseDataSource
+from juniper.data_loading.data_source import S3DataSource
 
 
-class BaseOutcomes(BaseDataSource, ABC):
+class BaseOutcomes(S3DataSource, ABC):
     metadata: pd.Series
 
     def __init__(self, path: S3Path = None):

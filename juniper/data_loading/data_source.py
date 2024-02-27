@@ -2,6 +2,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 from s3path import S3Path
@@ -15,39 +16,21 @@ class BaseDataSource(ABC):
 
     def __init__(
         self,
-        path: S3Path,
+        path: Path,
     ):
         self.path = path
         config = load_config()
         self.index_column = config["data_sources"]["index_column"]
         self.get_metadata()
 
+    @abstractmethod
     def read_parquet(
         self,
-        path: S3Path = None,
+        path: Path = None,
         columns: list[str] = None,
         filters: list[tuple] | list[list[tuple]] | None = None,
     ) -> pd.DataFrame:
-        if path is None:
-            path = self.path
-        config = load_config()
-        return pd.read_parquet(
-            path.as_uri(),
-            columns=columns,
-            # parquet_file_extension=None,
-            # index=index_column,
-            dtype_backend="pyarrow",
-            # blocksize="1024MiB",
-            filters=filters,
-            storage_options={
-                "key": config["minio"]["aws_access_key_id"],
-                "secret": config["minio"]["aws_secret_access_key"],
-                "client_kwargs": {
-                    "endpoint_url": config["minio"]["endpoint_url"],
-                },
-                "config_kwargs": {"s3": {"addressing_style": "virtual"}},
-            },
-        )
+        pass
 
     @abstractmethod
     def get_metadata(self):
@@ -67,3 +50,35 @@ class BaseDataSource(ABC):
         ret = self._load_train_test(train_idx, test_idx, train_time_end)
         logging.info(f"Loaded {self.__class__.__name__} in {time.monotonic() - t:.3f} seconds")
         return ret
+
+
+class S3DataSource(BaseDataSource, ABC):
+    def __init__(
+        self,
+        path: S3Path,
+    ):
+        super().__init__(path)
+
+    def read_parquet(
+        self,
+        path: S3Path = None,
+        columns: list[str] = None,
+        filters: list[tuple] | list[list[tuple]] | None = None,
+    ) -> pd.DataFrame:
+        if path is None:
+            path = self.path
+        config = load_config()
+        return pd.read_parquet(
+            path.as_uri(),
+            columns=columns,
+            dtype_backend="pyarrow",
+            filters=filters,
+            storage_options={
+                "key": config["minio"]["aws_access_key_id"],
+                "secret": config["minio"]["aws_secret_access_key"],
+                "client_kwargs": {
+                    "endpoint_url": config["minio"]["endpoint_url"],
+                },
+                "config_kwargs": {"s3": {"addressing_style": "virtual"}},
+            },
+        )

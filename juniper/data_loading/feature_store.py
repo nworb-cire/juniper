@@ -9,10 +9,10 @@ from s3path import S3Path
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
-from juniper.data_loading.data_source import BaseDataSource
+from juniper.data_loading.data_source import S3DataSource
 
 
-class BaseFeatureStore(BaseDataSource, ABC):
+class BaseFeatureStore(S3DataSource, ABC):
     def __init__(self, path: S3Path = None):
         config = load_config()
         if path is None:
