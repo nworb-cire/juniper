@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import pyarrow as pa
@@ -80,6 +81,17 @@ class ParquetFeatureStore(BaseFeatureStore, ABC):
                     columns[FeatureType.UNUSABLE].append(field.name)
 
         return columns
+
+
+class LocalParquetFeatureStore(ParquetFeatureStore):
+    def get_schema(self) -> pa.Schema:
+        return pq.read_schema(self.path)
+
+    def read_parquet(
+        self, path: Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
+    ) -> pd.DataFrame:
+        df = pd.read_parquet(self.path, columns=columns, filters=filters)
+        return df.set_index(self.index_column)
 
 
 class S3ParquetFeatureStore(ParquetFeatureStore, S3DataSource):

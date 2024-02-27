@@ -4,3 +4,4 @@ notebooks/
 .idea/
 *_cache/
 */__pycache__/
+data/
