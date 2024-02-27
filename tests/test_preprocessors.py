@@ -43,7 +43,8 @@ def test_fit_preprocessor(feature_type, expected, feature_store):
 
 
 def test_get_array_metadata(feature_store):
-    cn = ColumnNormalizer(column_name="arr", schema_in=feature_store.schema)
+    field = feature_store.schema.field("arr")
+    cn = ColumnNormalizer(field=field, preprocessor_factory=get_preprocessor)
     assert cn.schema_out is not None
     metadata = feature_store.get_feature_metadata(cn.schema_out)
     assert metadata is not None
@@ -55,16 +56,17 @@ def test_get_array_metadata(feature_store):
 def test_normalize_array(feature_store):
     df = feature_store.read_parquet()[["arr"]]
     assert df is not None
-    cn = ColumnNormalizer(column_name="arr", schema_in=feature_store.schema)
-    Xt = cn.fit_transform(df)
+    cn = ColumnNormalizer(field=feature_store.schema.field("arr"), preprocessor_factory=get_preprocessor)
+    Xt = cn._transform(df)
     assert Xt is not None
     assert isinstance(Xt, pd.DataFrame)
+    print(Xt)
     expected = pd.DataFrame(
         {
-            "arr.a": [1.0, 3.0, 5.0, 7.0, 9.0],
-            "arr.b": [2.0, 4.0, 6.0, 8.0, 10.0],
+            "arr.a": [1.0, 3.0, np.nan, np.nan, 5.0, 7.0, 9.0],
+            "arr.b": [2.0, 4.0, np.nan, np.nan, 6.0, 8.0, 10.0],
         },
-        index=pd.Index([1, 1, 4, 4, 4], name="id"),
+        index=pd.Index([1, 1, 2, 3, 4, 4, 4], name="id"),
     )
     pd.testing.assert_frame_equal(Xt.astype(float), expected.astype(float))
 

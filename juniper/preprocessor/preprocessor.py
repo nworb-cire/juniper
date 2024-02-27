@@ -53,22 +53,14 @@ def get_preprocessor(
         config = load_config()
         for column in columns:
             feature_metadata = config["data_sources"]["feature_store"].get("feature_meta", {}).get(column, {})
-            cn = ColumnNormalizer(
-                column_name=column,
-                schema_in=schema,
+            transformer = ColumnNormalizer(
+                field=schema.field(column),
+                preprocessor_factory=get_preprocessor,
                 record_path=feature_metadata.get("record_path"),
                 meta=feature_metadata.get("meta"),
             )
-            if all(field.metadata[b"usable_type"].decode() == FeatureType.UNUSABLE for field in cn.schema_out):
-                logging.warning(f"Array column {column} is unusable and will be dropped")
-                continue
-            pipeline = Pipeline(
-                steps=[
-                    ("normalizer", cn),
-                    ("preprocessor", get_preprocessor(feature_store, cn.schema_out)),
-                ]
-            )
-            transformers.append((column, pipeline, [column]))
+            if transformer.column_transfomer is not None:
+                transformers.append((column, transformer, [column]))
 
     column_transformer = ColumnTransformer(transformers=transformers, remainder="drop", n_jobs=-1)
     if len(transformers) == 0:
