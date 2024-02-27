@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pytest
 from sklearn.compose import ColumnTransformer
 
+from juniper.common import schema_tools
 from juniper.common.data_type import FeatureType
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.preprocessor import get_preprocessor
@@ -78,3 +80,53 @@ def test_fit_array_preprocessor(feature_store):
         [[-0.5102041, -0.5102041], [-0.17006803, -0.17006803], [0.17006803, 0.17006803], [0.5102041, 0.5102041]]
     )
     assert np.allclose(Xt, expected)
+
+
+def test_array_field_schema(feature_store):
+    field = feature_store.schema.field("arr")
+    schema = schema_tools.get_field_schema(field)
+    expected = pa.schema(
+        [
+            pa.field("arr.a", pa.int64(), metadata={"usable_type": FeatureType.NUMERIC}),
+            pa.field("arr.b", pa.int64(), metadata={"usable_type": FeatureType.NUMERIC}),
+        ]
+    )
+    assert schema == expected
+
+    schema = schema_tools.get_field_schema(
+        field.with_metadata({"usable_type": f'[{{"a": "{FeatureType.UNUSABLE}", "b": "{FeatureType.UNUSABLE}"}}]'})
+    )
+    expected = pa.schema(
+        [
+            pa.field("arr.a", pa.int64(), metadata={"usable_type": FeatureType.UNUSABLE}),
+            pa.field("arr.b", pa.int64(), metadata={"usable_type": FeatureType.UNUSABLE}),
+        ]
+    )
+    assert schema == expected
+
+
+@pytest.mark.parametrize(
+    "feature_type, expected_n_transformers, expect_arr",
+    [
+        (FeatureType.NUMERIC, 5, True),
+        (FeatureType.UNUSABLE, 4, False),
+    ],
+)
+def test_array_unusable(feature_type, expected_n_transformers, expect_arr, feature_store):
+    field = feature_store.schema.field("arr")
+    schema = pa.schema(
+        [feature_store.schema.field_by_name(name) for name in feature_store.schema.names if name != field.name]
+    ).append(field.with_metadata({"usable_type": f'[{{"a": "{feature_type}", "b": "{FeatureType.UNUSABLE}"}}]'}))
+    column_transformer = get_preprocessor(feature_store, schema)
+    assert len(column_transformer.transformers) == expected_n_transformers
+    df = feature_store.read_parquet()
+    Xt = column_transformer.fit_transform(df)
+    assert Xt is not None
+    assert FeatureType.NUMERIC in column_transformer.named_transformers_.keys()
+    assert FeatureType.CATEGORICAL in column_transformer.named_transformers_.keys()
+    assert FeatureType.BOOLEAN in column_transformer.named_transformers_.keys()
+    assert FeatureType.TIMESTAMP in column_transformer.named_transformers_.keys()
+    if expect_arr:
+        assert "arr" in column_transformer.named_transformers_.keys()
+    else:
+        assert "arr" not in column_transformer.named_transformers_.keys()

@@ -25,9 +25,8 @@ def get_preprocessor(
     timestamp_pipeline: Pipeline | None = None,
 ) -> ColumnTransformer:
     if schema is None:
-        metadata = feature_store.metadata
-    else:
-        metadata = feature_store.get_feature_metadata(schema)
+        schema = feature_store.schema
+    metadata = feature_store.get_feature_metadata(schema)
 
     transformers = []
     if columns := metadata.get(FeatureType.NUMERIC):
@@ -56,7 +55,7 @@ def get_preprocessor(
             feature_metadata = config["data_sources"]["feature_store"].get("feature_meta", {}).get(column, {})
             cn = ColumnNormalizer(
                 column_name=column,
-                schema_in=feature_store.schema,
+                schema_in=schema,
                 record_path=feature_metadata.get("record_path"),
                 meta=feature_metadata.get("meta"),
             )

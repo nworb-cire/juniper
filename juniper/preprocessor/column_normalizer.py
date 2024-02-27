@@ -5,6 +5,7 @@ import pyarrow as pa
 from sklearn.base import TransformerMixin, BaseEstimator
 
 from juniper.common import schema_tools
+from juniper.common.data_type import FeatureType
 from juniper.data_loading.json_normalize import json_normalize
 
 
@@ -32,7 +33,10 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         # remove fields that will not be in the schema
         _meta = self.meta or []
         for field in schema_out:
-            if not field.name.startswith((self.record_prefix, *[f"{self.meta_prefix}{m}" for m in meta or []])):
+            if (
+                not field.name.startswith((self.record_prefix, *[f"{self.meta_prefix}{m}" for m in meta or []]))
+                or field.metadata.get(b"usable_type", b"").decode() == FeatureType.UNUSABLE
+            ):
                 logging.debug(f"Removing field {field.name}")
                 schema_out = schema_out.remove(schema_out.get_field_index(field.name))
         self.schema_out = schema_out
