@@ -28,7 +28,7 @@ class TimeSeriesSplit:
         self, outcomes: BaseOutcomes, end_ts: datetime = None
     ) -> Generator[tuple[pd.Index, pd.Index, datetime], None, None]:
         if end_ts is None:
-            end_ts = outcomes.max_timestamp()
+            end_ts = outcomes.max_timestamp().date()
         for i in range(self.n_splits):
             holdout_time_end = end_ts - (self.n_splits - i) * self.timedelta
             holdout_time_begin = holdout_time_end - pd.Timedelta(days=self.holdout_time)
@@ -36,7 +36,7 @@ class TimeSeriesSplit:
             train_idx = outcomes.index_range(None, train_time_end)
             test_idx = outcomes.index_range(holdout_time_begin, holdout_time_end)
             logging.info("#" * 10 + f" Time Series CV Split #{i+1}/{self.n_splits} " + "#" * 10)
-            logging.info(f" Train until {train_time_end}, val from {holdout_time_begin} to {holdout_time_end}")
+            logging.info(f"-----> {train_time_end} | {holdout_time_begin} <---> {holdout_time_end}")
             # logging.info(f" Train size: {len(train_idx)}, val size: {len(test_idx)}")
             yield train_idx, test_idx, train_time_end
 
