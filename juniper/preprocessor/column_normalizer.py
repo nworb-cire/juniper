@@ -56,6 +56,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         assert X.shape[1] == 1, "ColumnNormalizer can only handle a single column"
         Xt = X[self.column_name].dropna().explode().dropna()
         Xt = self._json_normalize(Xt)
+        Xt.columns = [f"{self.column_name}.{c}" for c in Xt.columns if not c.startswith(self.column_name)]
         # set dtypes
         for field in self.schema_out:
             match field.metadata.get(b"usable_type"):
