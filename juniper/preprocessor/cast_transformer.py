@@ -19,7 +19,14 @@ class CastTransformer(TransformerMixin, BaseEstimator):
     def __init__(self, *, dtype=np.float32):
         self.dtype = dtype
 
+    def set_output(self, *, transform=None):
+        return self
+
     def _cast(self, a):
+        if hasattr(a, "iloc"):
+            # dataframe
+            if self.dtype == "datetime64[ns]":
+                a = a.astype(int)
         return a.astype(self.dtype)
 
     def fit(self, X, y=None, **fit_params):

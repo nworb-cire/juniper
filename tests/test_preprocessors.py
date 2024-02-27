@@ -28,18 +28,18 @@ def test_get_preprocessor(feature_store):
         (FeatureType.NUMERIC, np.array([[0.5154639, 0.0, -0.5154639, 0.0], [0.0, 0.0, 0.0, 1.0]])),
         (FeatureType.CATEGORICAL, [1.0, 0.0, 2.0, 3.0]),
         (FeatureType.BOOLEAN, [1.0, 1.0, -1.0, 0.0]),
-        (FeatureType.TIMESTAMP, [-1.0, -1 / 3, 1 / 3, 1.0]),
+        (FeatureType.TIMESTAMP, [-1.0005305, -0.3331565, 0.3331565, 1.0005305]),
     ],
 )
 def test_fit_preprocessor(feature_type, expected, feature_store):
     column_transformer = get_preprocessor(feature_store)
-    _, preprocessor, columns = next(filter(lambda x: x[0] == feature_type, column_transformer.transformers))
+    name, preprocessor, columns = next(filter(lambda x: x[0] == feature_type, column_transformer.transformers))
+    assert name == feature_type
     assert preprocessor is not None
     df = feature_store.read_parquet()
     Xt = preprocessor.fit_transform(df[columns])
-    assert Xt is not None
-    assert isinstance(Xt, np.ndarray)
-    assert np.allclose(Xt.T, expected)
+    assert isinstance(Xt, pd.DataFrame)
+    assert np.allclose(Xt.values.T, expected)
 
 
 def test_get_array_metadata(feature_store):
@@ -73,21 +73,42 @@ def test_normalize_array(feature_store):
 
 def test_fit_array_preprocessor(feature_store):
     column_transformer = get_preprocessor(feature_store)
-    _, preprocessor, columns = next(filter(lambda x: x[0] == "arr", column_transformer.transformers))
+    name, preprocessor, columns = next(filter(lambda x: x[0] == "arr", column_transformer.transformers))
+    assert name == "arr"
     assert preprocessor is not None
     df = feature_store.read_parquet()
     Xt = preprocessor.fit_transform(df[columns])
-    assert Xt is not None
-    expected = np.array(
-        [
-            [-0.5102041, -0.5102041],
-            [-0.25510204, -0.25510204],
-            [0.0, 0.0],
-            [0.25510204, 0.25510204],
-            [0.5102041, 0.5102041],
-        ]
+    assert isinstance(Xt, pd.DataFrame)
+    expected = pd.DataFrame(
+        {
+            "numeric__numeric__arr.a": [
+                [-0.22522522509098053, 0.0],
+                [-0.3378378450870514],
+                [-0.3378378450870514],
+                [0.22522522509098053, 0.45045045018196106, 0.6756756901741028],
+            ],
+            "numeric__numeric__arr.b": [
+                [-0.2024291455745697, 0.0],
+                [-0.4048582911491394],
+                [-0.4048582911491394],
+                [0.2024291455745697, 0.4048582911491394, 0.6072874665260315],
+            ],
+            "numeric__remainder__missingindicator_arr.a": [
+                [0.0, 0.0],
+                [1.0],
+                [1.0],
+                [0.0, 0.0, 0.0],
+            ],
+            "numeric__remainder__missingindicator_arr.b": [
+                [0.0, 0.0],
+                [1.0],
+                [1.0],
+                [0.0, 0.0, 0.0],
+            ],
+        },
+        index=pd.Index([1, 2, 3, 4], name="id"),
     )
-    assert np.allclose(Xt, expected)
+    pd.testing.assert_frame_equal(Xt, expected)
 
 
 def test_array_field_schema(feature_store):

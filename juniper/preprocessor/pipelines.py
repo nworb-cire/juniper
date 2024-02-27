@@ -50,7 +50,6 @@ def get_default_categorical_pipeline(columns: list[str]) -> Pipeline:
 def get_default_boolean_pipeline(columns: list[str]) -> Pipeline:
     return Pipeline(
         steps=[
-            ("nan_imputer", ConstantImputer(fill_value=np.nan)),
             ("float", CastTransformer()),
             ("imputer", ConstantImputer(fill_value=-1)),
         ]
@@ -66,7 +65,7 @@ def get_default_timestamp_pipeline(columns: list[str]) -> Pipeline:
                 "typecast",
                 Pipeline(
                     steps=[
-                        ("np_datetime", CastTransformer(dtype=np.datetime64)),
+                        ("np_datetime", CastTransformer(dtype="datetime64[ns]")),
                         ("np_int", CastTransformer(dtype=np.int64)),
                         ("float", CastTransformer()),
                     ]

@@ -20,7 +20,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         meta: list[str | list[str]] = None,
     ):
         self.field = field
-        self.preprocessor_factory = str(preprocessor_factory)
+        self.preprocessor_factory = preprocessor_factory
         self.record_path = record_path
         self.meta = meta
 
@@ -53,6 +53,9 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         self.column_transfomer = preprocessor_factory(
             ParquetFeatureStore, self.schema_out
         )  # FIXME: this should be an argument
+
+    def set_output(self, *, transform=None):
+        return self
 
     def _json_normalize(self, x):
         return json_normalize(

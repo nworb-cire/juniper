@@ -68,4 +68,5 @@ def get_preprocessor(
     logging.debug(f"Preprocessor initialized with {len(transformers)} transformers")
     for transformer in transformers:
         logging.debug(f"Transformer: {transformer[0]} ({len(transformer[2])} columns)")
+    column_transformer.set_output(transform="pandas")
     return column_transformer
