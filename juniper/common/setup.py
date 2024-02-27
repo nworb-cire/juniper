@@ -1,4 +1,5 @@
 import logging
+import os
 import tomllib
 from pathlib import Path
 
@@ -6,14 +7,21 @@ import boto3
 from s3path import register_configuration_parameter, PureS3Path, S3Path
 
 
+def project_root() -> Path:
+    return Path(__file__).parent.parent.parent.absolute()
+
+
 def load_config() -> dict:
-    project_root = Path(__file__).parent.parent.parent
-    config_file = project_root / "config.toml"
+    config_location = os.environ.get("CONFIG_LOCATION", "config.toml")
+    config_file = project_root() / config_location
     with open(config_file, "rb") as f:
         config = tomllib.load(f)
 
     for source in ["feature_store", "outcomes"]:
-        config["data_sources"][source]["location"] = S3Path(config["data_sources"][source]["location"][4:])
+        if config["data_sources"][source]["location"].startswith("s3://"):
+            config["data_sources"][source]["location"] = S3Path(config["data_sources"][source]["location"][4:])
+        else:
+            config["data_sources"][source]["location"] = project_root() / config["data_sources"][source]["location"]
     return config
 
 

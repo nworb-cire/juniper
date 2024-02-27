@@ -1,0 +1,17 @@
+[data_sources]
+index_column = "id"
+
+[data_sources.feature_store]
+location = "tests/data/feature_store.parquet"
+timestamp_column = ""
+enabled_feature_types = [
+    "numeric",
+    "categorical",
+    "boolean",
+    "timestamp",
+#    "array",
+]
+
+[data_sources.outcomes]
+location = "tests/data/outcomes.parquet"
+timestamp_column = ""

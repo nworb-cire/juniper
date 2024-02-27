@@ -9,10 +9,10 @@ from s3path import S3Path
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
-from juniper.data_loading.data_source import S3DataSource
+from juniper.data_loading.data_source import BaseDataSource, S3DataSource
 
 
-class BaseFeatureStore(S3DataSource, ABC):
+class BaseFeatureStore(BaseDataSource, ABC):
     def __init__(self, path: S3Path = None):
         config = load_config()
         if path is None:
@@ -47,22 +47,7 @@ class BaseFeatureStore(S3DataSource, ABC):
         pass
 
 
-class ParquetFeatureStore(BaseFeatureStore):
-    def get_schema(self) -> pa.Schema:
-        try:
-            path = next(self.path.iterdir())
-        except StopIteration:
-            path = self.path
-        config = load_config()
-        return pq.read_schema(
-            path.as_posix()[1:],
-            filesystem=pa.fs.S3FileSystem(
-                endpoint_override=config["minio"]["endpoint_url"],
-                access_key=config["minio"]["aws_access_key_id"],
-                secret_key=config["minio"]["aws_secret_access_key"],
-            ),
-        )
-
+class ParquetFeatureStore(BaseFeatureStore, ABC):
     @classmethod
     def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
         columns = defaultdict(list)
@@ -95,3 +80,20 @@ class ParquetFeatureStore(BaseFeatureStore):
                     columns[FeatureType.UNUSABLE].append(field.name)
 
         return columns
+
+
+class S3ParquetFeatureStore(ParquetFeatureStore, S3DataSource):
+    def get_schema(self) -> pa.Schema:
+        try:
+            path = next(self.path.iterdir())
+        except StopIteration:
+            path = self.path
+        config = load_config()
+        return pq.read_schema(
+            path.as_posix()[1:],
+            filesystem=pa.fs.S3FileSystem(
+                endpoint_override=config["minio"]["endpoint_url"],
+                access_key=config["minio"]["aws_access_key_id"],
+                secret_key=config["minio"]["aws_secret_access_key"],
+            ),
+        )
