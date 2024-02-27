@@ -14,7 +14,7 @@ def get_default_numeric_pipeline(columns: list[str]) -> Pipeline:
             ("imputer", ConstantImputer(add_indicator=True)),
             (
                 "scaler",
-                ColumnTransformer(
+                ColumnTransformer(  # Scale only the numeric columns
                     transformers=[
                         (
                             "numeric",
@@ -24,8 +24,8 @@ def get_default_numeric_pipeline(columns: list[str]) -> Pipeline:
                                     ("scaler", RobustScaler(quantile_range=(1.0, 99.0))),
                                 ]
                             ),
-                            columns,
-                        )  # Scale only the numeric columns
+                            slice(len(columns)),  # This needs to be a slice since the imputer returns a np array
+                        )
                     ],
                     remainder="passthrough",
                 ),
