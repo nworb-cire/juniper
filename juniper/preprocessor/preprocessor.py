@@ -55,7 +55,7 @@ def get_preprocessor(
             feature_metadata = config["data_sources"]["feature_store"].get("feature_meta", {}).get(column, {})
             transformer = ColumnNormalizer(
                 field=schema.field(column),
-                preprocessor_factory=get_preprocessor,
+                preprocessor_factory=lambda x: get_preprocessor(feature_store, schema=x),
                 record_path=feature_metadata.get("record_path"),
                 meta=feature_metadata.get("meta"),
             )

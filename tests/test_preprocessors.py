@@ -44,7 +44,7 @@ def test_fit_preprocessor(feature_type, expected, feature_store):
 
 def test_get_array_metadata(feature_store):
     field = feature_store.schema.field("arr")
-    cn = ColumnNormalizer(field=field, preprocessor_factory=get_preprocessor)
+    cn = ColumnNormalizer(field=field, preprocessor_factory=lambda x: get_preprocessor(feature_store, schema=x))
     assert cn.schema_out is not None
     metadata = feature_store.get_feature_metadata(cn.schema_out)
     assert metadata is not None
@@ -56,7 +56,10 @@ def test_get_array_metadata(feature_store):
 def test_normalize_array(feature_store):
     df = feature_store.read_parquet()[["arr"]]
     assert df is not None
-    cn = ColumnNormalizer(field=feature_store.schema.field("arr"), preprocessor_factory=get_preprocessor)
+    cn = ColumnNormalizer(
+        field=feature_store.schema.field("arr"),
+        preprocessor_factory=lambda x: get_preprocessor(feature_store, schema=x),
+    )
     Xt = cn._transform(df)
     assert Xt is not None
     assert isinstance(Xt, pd.DataFrame)

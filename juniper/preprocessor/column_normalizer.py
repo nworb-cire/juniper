@@ -7,7 +7,6 @@ from sklearn.base import TransformerMixin, BaseEstimator
 
 from juniper.common import schema_tools
 from juniper.common.data_type import FeatureType
-from juniper.data_loading.feature_store import ParquetFeatureStore
 from juniper.data_loading.json_normalize import json_normalize
 
 
@@ -50,9 +49,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             self.column_transfomer = None
             return
 
-        self.column_transfomer = preprocessor_factory(
-            ParquetFeatureStore, self.schema_out
-        )  # FIXME: this should be an argument
+        self.column_transfomer = preprocessor_factory(self.schema_out)
 
     def set_output(self, *, transform=None):
         return self
