@@ -159,3 +159,35 @@ def test_array_unusable(feature_type, expected_n_transformers, expect_arr, featu
         assert "arr" in column_transformer.named_transformers_.keys()
     else:
         assert "arr" not in column_transformer.named_transformers_.keys()
+
+
+def test_inference_all_null_values(feature_store):
+    column_transformer = get_preprocessor(feature_store)
+    df = feature_store.read_parquet()
+    column_transformer.fit(df)
+
+    # create empty dataframe
+    dat = df.head(1)
+    for col in dat.columns:
+        dat[col] = None
+    assert all(pd.isna(dat))
+    Xt = column_transformer.transform(dat)
+    assert isinstance(Xt, pd.DataFrame)
+    for col in Xt.columns:
+        print(Xt[col])
+    expected = pd.DataFrame(
+        {
+            "numeric__numeric__num": [0.0],
+            "numeric__remainder__missingindicator_num": [1.0],
+            "categorical__cat": [0.0],
+            "boolean__bool": [-1.0],
+            "timestamp__ts": [-12425.782227],
+            "arr__numeric__numeric__arr.a": [[-0.3378378450870514]],
+            "arr__numeric__numeric__arr.b": [[-0.4048582911491394]],
+            "arr__numeric__remainder__missingindicator_arr.a": [[1.0]],
+            "arr__numeric__remainder__missingindicator_arr.b": [[1.0]],
+        },
+        index=pd.Index([1], name="id"),
+    )
+
+    pd.testing.assert_frame_equal(Xt, expected, check_dtype=False)

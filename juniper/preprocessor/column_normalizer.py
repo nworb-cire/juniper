@@ -72,15 +72,6 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         Xt = X[self.field.name].explode()
         Xt = self._json_normalize(Xt)
         Xt.columns = [f"{self.field.name}.{c}" for c in Xt.columns if not c.startswith(self.field.name)]
-        # set dtypes
-        for field in self.schema_out:
-            match field.metadata.get(b"usable_type"):
-                case b"unusable":
-                    raise NotImplementedError
-                case b"numeric":
-                    Xt[field.name] = Xt[field.name].astype("float32")
-                case _:
-                    pass
         return Xt
 
     def _flatten(self, Xt):
@@ -101,6 +92,10 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
     def transform(self, X) -> pd.DataFrame:
         Xt = self._transform(X)
         index = Xt.index
+        if Xt.empty:
+            # This should only be the case when every value in X was None, TODO verify
+            n = X.shape[0]
+            Xt = pd.DataFrame({field.name: [None] * n for field in self.schema_out}, index=X.index)
         Xt = self.column_transfomer.transform(Xt)
         Xt = pd.DataFrame(Xt, index=index)
         Xt = self._flatten(Xt)
