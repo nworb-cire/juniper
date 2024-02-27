@@ -57,18 +57,17 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
     def _json_normalize(self, x):
         return json_normalize(
             x,
-            # FIXME
-            # record_path=self.record_path,
-            # meta=self.meta,
-            # record_prefix=self.record_prefix,
-            # meta_prefix=self.meta_prefix,
+            record_path=self.record_path,
+            meta=self.meta,
+            record_prefix=self.record_prefix if self.record_path is not None else None,
+            meta_prefix=self.meta_prefix if self.meta is not None else None,
         )
 
     def _transform(self, X):
         assert X.shape[1] == 1, "ColumnNormalizer can only handle a single column"
         Xt = X[self.field.name].explode()
         Xt = self._json_normalize(Xt)
-        Xt.columns = [f"{self.field.name}.{c}" for c in Xt.columns if not c.startswith(self.field.name)]
+        Xt = Xt.rename(columns={c: f"{self.field.name}.{c}" for c in Xt.columns if not c.startswith(self.field.name)})
         return Xt
 
     def _flatten(self, Xt):

@@ -442,7 +442,7 @@ def json_normalize(
 
         # GH 31507 GH 30145, GH 26284 if result is not list, raise TypeError if not
         # null, otherwise return an empty list
-        if not isinstance(result, list):
+        if not isinstance(result, (list, np.ndarray)):
             if pd.isnull(result):
                 result = []
             else:
