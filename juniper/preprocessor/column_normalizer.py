@@ -35,7 +35,6 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
 
         schema_out = schema_tools.get_field_schema(field)
         # remove fields that will not be in the schema
-        _meta = self.meta or []
         for field in schema_out:
             if (
                 not field.name.startswith((self.record_prefix, *[f"{self.meta_prefix}{m}" for m in meta or []]))
@@ -55,6 +54,12 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             return
 
         self.column_transfomer = preprocessor_factory(self.schema_out)
+        self.null_row = {f.name.replace("element.", ""): None for f in self.field.type.value_field.flatten()}
+        if self.record_path is not None:
+            self.null_row[self.record_path] = None
+        if self.meta is not None:
+            for m in self.meta:
+                self.null_row[m] = None
 
     def set_output(self, *, transform=None):
         return self
@@ -74,6 +79,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
     def _transform(self, X):
         assert X.shape[1] == 1, "ColumnNormalizer can only handle a single column"
         Xt = X[self.field.name].explode()
+        Xt = Xt.apply(lambda x: x if x is not None else self.null_row)
         Xt = self._json_normalize(Xt)
         Xt = Xt.rename(columns={c: f"{self.field.name}.{c}" for c in Xt.columns if not c.startswith(self.field.name)})
         return Xt
