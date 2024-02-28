@@ -1,4 +1,3 @@
-import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
@@ -61,7 +60,6 @@ class ParquetFeatureStore(BaseFeatureStore, ABC):
         for i in range(len(schema)):
             field = schema.field(i)
             if field.name.startswith(override_unusable_features):  # TODO: glob
-                logging.warning(f"Removing field {field.name}")
                 columns[FeatureType.UNUSABLE].append(field.name)
                 continue
             if isinstance(field.type, pa.lib.ListType):

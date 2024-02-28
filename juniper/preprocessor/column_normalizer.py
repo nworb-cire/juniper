@@ -42,7 +42,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
                 or field.metadata.get(b"usable_type", b"").decode() == FeatureType.UNUSABLE
                 or field.name.startswith(override_unusable_features)
             ):
-                logging.warning(f"Removing field {field.name}")
+                logging.debug(f"Removing field {field.name}")
                 schema_out = schema_out.remove(schema_out.get_field_index(field.name))
         self.schema_out = schema_out
 

@@ -1,10 +1,9 @@
-import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, OrdinalEncoder
 
-from juniper.preprocessor.cast_transformer import CastTransformer
+from juniper.preprocessor.cast_transformer import CastTransformer, DatetimeCastTransformer
 from juniper.preprocessor.constant_imputer import ConstantImputer
 
 
@@ -62,15 +61,23 @@ def get_default_timestamp_pipeline(columns: list[str]) -> Pipeline:
         steps=[
             ("imputer", ConstantImputer(fill_value=unix_epoch, missing_values=pd.NA, add_indicator=True)),
             (
-                "typecast",
-                Pipeline(
-                    steps=[
-                        ("np_datetime", CastTransformer(dtype="datetime64[ns]")),
-                        ("np_int", CastTransformer(dtype=np.int64)),
-                        ("float", CastTransformer()),
-                    ]
+                "scaler",
+                ColumnTransformer(
+                    transformers=[
+                        (
+                            "timestamp",
+                            Pipeline(
+                                steps=[
+                                    ("typecast", DatetimeCastTransformer()),
+                                    ("scaler", RobustScaler()),
+                                ]
+                            ),
+                            slice(len(columns)),
+                        )
+                    ],
+                    remainder="passthrough",
                 ),
             ),
-            ("scaler", RobustScaler()),
+            ("typecast", CastTransformer()),
         ]
     )
