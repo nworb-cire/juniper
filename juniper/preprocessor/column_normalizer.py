@@ -84,6 +84,13 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
     def fit_transform(self, X, y=None, **fit_params: dict):
         Xt = self._transform(X)
         index = Xt.index
+        for _, _, columns in self.column_transfomer.transformers:
+            for column in columns:
+                if column not in Xt.columns:
+                    raise ValueError(
+                        f"Column {column} not found in input data {Xt.columns} for field {self.field.name} "
+                        + "(hint: either check the record path or add it to the remove list in the config file)"
+                    )
         Xt = self.column_transfomer.fit_transform(Xt, y, **fit_params)
         Xt = pd.DataFrame(Xt, index=index)
         Xt = self._flatten(Xt)
