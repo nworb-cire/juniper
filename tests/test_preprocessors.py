@@ -81,31 +81,21 @@ def test_fit_array_preprocessor(feature_store):
     df = feature_store.read_parquet()
     Xt = preprocessor.fit_transform(df[columns])
     assert isinstance(Xt, pd.DataFrame)
+    print(Xt)
     expected = pd.DataFrame(
         {
-            "numeric__numeric__arr.a": [
-                [-0.22522522509098053, 0.0],
-                [-0.3378378450870514],
-                [-0.3378378450870514],
-                [0.22522522509098053, 0.45045045018196106, 0.6756756901741028],
-            ],
-            "numeric__numeric__arr.b": [
-                [-0.2024291455745697, 0.0],
-                [-0.4048582911491394],
-                [-0.4048582911491394],
-                [0.2024291455745697, 0.4048582911491394, 0.6072874665260315],
-            ],
-            "numeric__remainder__missingindicator_arr.a": [
-                [0.0, 0.0],
-                [1.0],
-                [1.0],
-                [0.0, 0.0, 0.0],
-            ],
-            "numeric__remainder__missingindicator_arr.b": [
-                [0.0, 0.0],
-                [1.0],
-                [1.0],
-                [0.0, 0.0, 0.0],
+            "arr": [
+                np.array([[-0.22522522509098053, 0.0], [-0.2024291455745697, 0.0], [0.0, 0.0], [0.0, 0.0]]),
+                np.array([[-0.3378378450870514], [-0.4048582911491394], [1.0], [1.0]]),
+                np.array([[-0.3378378450870514], [-0.4048582911491394], [1.0], [1.0]]),
+                np.array(
+                    [
+                        [0.22522522509098053, 0.45045045018196106, 0.6756756901741028],
+                        [0.2024291455745697, 0.4048582911491394, 0.6072874665260315],
+                        [0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0],
+                    ]
+                ),
             ],
         },
         index=pd.Index([1, 2, 3, 4], name="id"),
@@ -184,10 +174,9 @@ def test_inference_all_null_values(feature_store):
             "categorical__cat": [0.0],
             "boolean__bool": [-1.0],
             "timestamp__timestamp__ts": [-12419.6669921875],
-            "arr__numeric__numeric__arr.a": [[-0.3378378450870514]],
-            "arr__numeric__numeric__arr.b": [[-0.4048582911491394]],
-            "arr__numeric__remainder__missingindicator_arr.a": [[1.0]],
-            "arr__numeric__remainder__missingindicator_arr.b": [[1.0]],
+            "arr__arr": [
+                np.array([[-0.3378378450870514], [-0.4048582911491394], [1.0], [1.0]]),
+            ],
         },
         index=pd.Index([1], name="id"),
     )

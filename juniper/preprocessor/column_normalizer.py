@@ -1,6 +1,7 @@
 import logging
 from typing import Callable
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 from sklearn.base import TransformerMixin, BaseEstimator
@@ -86,8 +87,10 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         Xt = Xt.rename(columns={c: f"{self.field.name}.{c}" for c in Xt.columns if not c.startswith(self.field.name)})
         return Xt
 
-    def _flatten(self, Xt):
-        return Xt.groupby(Xt.index).agg(lambda x: x.tolist())
+    def _flatten(self, X):
+        Xt = X.groupby(X.index).agg(lambda x: x.tolist())
+        Xt = Xt.apply(lambda row: np.array([*row]), axis=1)
+        return Xt.to_frame(name=self.field.name)
 
     def fit_transform(self, X, y=None, **fit_params: dict):
         Xt = self._transform(X)
