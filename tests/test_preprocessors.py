@@ -28,7 +28,7 @@ def test_get_preprocessor(feature_store):
         (FeatureType.NUMERIC, np.array([[0.5154639, 0.0, -0.5154639, 0.0], [0.0, 0.0, 0.0, 1.0]])),
         (FeatureType.CATEGORICAL, [1.0, 0.0, 2.0, 3.0]),
         (FeatureType.BOOLEAN, [1.0, 1.0, -1.0, 0.0]),
-        (FeatureType.TIMESTAMP, [-1.0005305, -0.3331565, 0.3331565, 1.0005305]),
+        (FeatureType.TIMESTAMP, [-1.0, -1 / 3, 1 / 3, 1.0]),
     ],
 )
 def test_fit_preprocessor(feature_type, expected, feature_store):
@@ -63,7 +63,6 @@ def test_normalize_array(feature_store):
     Xt = cn._transform(df)
     assert Xt is not None
     assert isinstance(Xt, pd.DataFrame)
-    print(Xt)
     expected = pd.DataFrame(
         {
             "arr.a": [1.0, 3.0, np.nan, np.nan, 5.0, 7.0, 9.0],
@@ -184,7 +183,7 @@ def test_inference_all_null_values(feature_store):
             "numeric__remainder__missingindicator_num": [1.0],
             "categorical__cat": [0.0],
             "boolean__bool": [-1.0],
-            "timestamp__ts": [-12425.782227],
+            "timestamp__timestamp__ts": [-12419.6669921875],
             "arr__numeric__numeric__arr.a": [[-0.3378378450870514]],
             "arr__numeric__numeric__arr.b": [[-0.4048582911491394]],
             "arr__numeric__remainder__missingindicator_arr.a": [[1.0]],

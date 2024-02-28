@@ -27,7 +27,7 @@ class CastTransformer(TransformerMixin, BaseEstimator):
         return a.astype(self.dtype)
 
     def fit(self, X, y=None, **fit_params):
-        self._cast(X)
+        # self._cast(X)
         return self
 
     def transform(self, X, y=None):
@@ -44,6 +44,7 @@ class DatetimeCastTransformer(CastTransformer):
         a[a == zero] = unix_epoch
         for col in a.columns:
             try:
+                # FIXME: this does dates only, not datetime
                 a[col] = pd.to_datetime(a[col]).apply(lambda x: None if pd.isna(x) else x.toordinal())
             except (TypeError, AttributeError) as e:
                 raise TypeError(f"Column {col} is not a datetime") from e
