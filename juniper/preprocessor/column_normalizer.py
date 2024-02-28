@@ -54,6 +54,9 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
     def set_output(self, *, transform=None):
         return self
 
+    def _sk_visual_block_(self):
+        return self.column_transfomer._sk_visual_block_()
+
     def _json_normalize(self, x):
         return json_normalize(
             x,
