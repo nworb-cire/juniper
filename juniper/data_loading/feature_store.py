@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
@@ -53,10 +54,16 @@ class ParquetFeatureStore(BaseFeatureStore, ABC):
     def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
         columns = defaultdict(list)
 
-        enabled_feature_types = load_config()["data_sources"]["feature_store"]["enabled_feature_types"]
+        config = load_config()
+        enabled_feature_types = config["data_sources"]["feature_store"]["enabled_feature_types"]
+        override_unusable_features = tuple(config["data_sources"]["feature_store"].get("unusable_features", []))
 
         for i in range(len(schema)):
             field = schema.field(i)
+            if field.name.startswith(override_unusable_features):  # TODO: glob
+                logging.warning(f"Removing field {field.name}")
+                columns[FeatureType.UNUSABLE].append(field.name)
+                continue
             if isinstance(field.type, pa.lib.ListType):
                 if FeatureType.ARRAY in enabled_feature_types:
                     columns[FeatureType.ARRAY].append(field.name)

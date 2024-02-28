@@ -7,6 +7,7 @@ from sklearn.base import TransformerMixin, BaseEstimator
 
 from juniper.common import schema_tools
 from juniper.common.data_type import FeatureType
+from juniper.common.setup import load_config
 from juniper.data_loading.json_normalize import json_normalize
 
 
@@ -23,6 +24,9 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         self.record_path = record_path
         self.meta = meta
 
+        config = load_config()
+        override_unusable_features = tuple(config["data_sources"]["feature_store"].get("unusable_features", []))
+
         if self.record_path is None:
             self.record_prefix = f"{self.field.name}."
         else:
@@ -36,6 +40,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             if (
                 not field.name.startswith((self.record_prefix, *[f"{self.meta_prefix}{m}" for m in meta or []]))
                 or field.metadata.get(b"usable_type", b"").decode() == FeatureType.UNUSABLE
+                or field.name.startswith(override_unusable_features)
             ):
                 logging.warning(f"Removing field {field.name}")
                 schema_out = schema_out.remove(schema_out.get_field_index(field.name))
