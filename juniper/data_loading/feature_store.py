@@ -6,7 +6,6 @@ from pathlib import Path
 import pandas as pd
 import pyarrow as pa
 from pyarrow import parquet as pq
-from s3path import S3Path
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
@@ -14,7 +13,7 @@ from juniper.data_loading.data_source import BaseDataSource, S3DataSource
 
 
 class BaseFeatureStore(BaseDataSource, ABC):
-    def __init__(self, path: S3Path = None):
+    def __init__(self, path: Path = None):
         config = load_config()
         if path is None:
             path = config["data_sources"]["feature_store"]["location"]
