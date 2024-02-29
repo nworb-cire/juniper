@@ -65,7 +65,7 @@ def get_preprocessor(
                 logging.warning(f"Error creating ColumnNormalizer for {column}: {e}")
                 continue
 
-    column_transformer = ColumnTransformer(transformers=transformers, remainder="drop", n_jobs=-1)
+    column_transformer = ColumnTransformer(transformers=transformers, remainder="drop", n_jobs=-1, verbose=True)
     if len(transformers) == 0:
         raise ValueError("No transformers found")
     logging.debug(f"Preprocessor initialized with {len(transformers)} transformers")
