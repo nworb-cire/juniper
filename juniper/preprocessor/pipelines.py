@@ -38,9 +38,8 @@ def get_default_categorical_pipeline(columns: list[str]) -> Pipeline:
     # TODO: Handle "not before seen" categories in deployment
     return Pipeline(
         steps=[
-            # ("categorizer", Categorizer(columns=pd.Index(columns))),
             ("imputer", ConstantImputer(fill_value="_missing")),
-            ("encoder", OrdinalEncoder()),
+            ("encoder", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)),
             ("typecast", CastTransformer()),
         ]
     )
