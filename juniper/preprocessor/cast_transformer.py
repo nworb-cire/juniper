@@ -24,7 +24,13 @@ class CastTransformer(TransformerMixin, BaseEstimator):
         return self
 
     def _cast(self, a):
-        return a.astype(self.dtype)
+        try:
+            return a.astype(self.dtype)
+        except (TypeError, ValueError) as e:
+            err_str = f"Unable to cast to {self.dtype}: {e}"
+            if hasattr(a, "columns"):
+                err_str += f"\nColumns: {a.columns}"
+            raise TypeError(err_str) from e
 
     def fit(self, X, y=None, **fit_params):
         # self._cast(X)
