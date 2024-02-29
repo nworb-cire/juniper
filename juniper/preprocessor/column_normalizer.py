@@ -52,11 +52,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             all(field.metadata[b"usable_type"].decode() == FeatureType.UNUSABLE for field in schema_out)
             or len(schema_out) == 0
         ):
-            logging.warning(f"Array column {self.field.name} is unusable and will be dropped")
-            self.column_transformer = None
-            return
-
-        self.column_transformer = preprocessor_factory(self.schema_out)
+            raise ValueError(f"Array column {self.field.name} is unusable and will be dropped")
 
     def set_output(self, *, transform=None):
         return self
@@ -91,13 +87,17 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
     def fit_transform(self, X, y=None, **fit_params: dict):
         Xt = self._transform(X)
         index = Xt.index
-        for _, _, columns in self.column_transformer.transformers:
+        # TODO: pass feature store class to get metadata directly
+        _column_transformer = self.preprocessor_factory(self.schema_out)
+        for _, _, columns in _column_transformer.transformers:
             for column in columns:
                 if column not in Xt.columns:
-                    raise ValueError(
-                        f"Column {column} not found in input data {Xt.columns} for field {self.field.name} "
-                        + "(hint: either check the record path or add it to the remove list in the config file)"
+                    logging.warning(
+                        f"Encountered empty column {column} in input data for {self.field.name}. "
+                        + "Will remove from output."
                     )
+                    self.schema_out = self.schema_out.remove(self.schema_out.get_field_index(column))
+        self.column_transformer = self.preprocessor_factory(self.schema_out)
         Xt = self.column_transformer.fit_transform(Xt, y, **fit_params)
         Xt = pd.DataFrame(Xt, index=index)
         Xt = self._flatten(Xt, X.index)

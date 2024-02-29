@@ -53,14 +53,17 @@ def get_preprocessor(
         config = load_config()
         for column in columns:
             feature_metadata = config["data_sources"]["feature_store"].get("feature_meta", {}).get(column, {})
-            transformer = ColumnNormalizer(
-                field=schema.field(column),
-                preprocessor_factory=lambda x: get_preprocessor(feature_store, schema=x),
-                record_path=feature_metadata.get("record_path"),
-                meta=feature_metadata.get("meta"),
-            )
-            if transformer.column_transformer is not None:
+            try:
+                transformer = ColumnNormalizer(
+                    field=schema.field(column),
+                    preprocessor_factory=lambda x: get_preprocessor(feature_store, schema=x),
+                    record_path=feature_metadata.get("record_path"),
+                    meta=feature_metadata.get("meta"),
+                )
                 transformers.append((column, transformer, [column]))
+            except ValueError as e:
+                logging.warning(f"Error creating ColumnNormalizer for {column}: {e}")
+                continue
 
     column_transformer = ColumnTransformer(transformers=transformers, remainder="drop", n_jobs=-1)
     if len(transformers) == 0:
