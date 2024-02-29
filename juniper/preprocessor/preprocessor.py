@@ -59,7 +59,7 @@ def get_preprocessor(
                 record_path=feature_metadata.get("record_path"),
                 meta=feature_metadata.get("meta"),
             )
-            if transformer.column_transfomer is not None:
+            if transformer.column_transformer is not None:
                 transformers.append((column, transformer, [column]))
 
     column_transformer = ColumnTransformer(transformers=transformers, remainder="drop", n_jobs=-1)

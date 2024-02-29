@@ -53,22 +53,16 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             or len(schema_out) == 0
         ):
             logging.warning(f"Array column {self.field.name} is unusable and will be dropped")
-            self.column_transfomer = None
+            self.column_transformer = None
             return
 
-        self.column_transfomer = preprocessor_factory(self.schema_out)
-        self.null_row = {f.name.replace("element.", ""): None for f in self.field.type.value_field.flatten()}
-        if self.record_path is not None:
-            self.null_row[self.record_path] = None
-        if self.meta is not None:
-            for m in self.meta:
-                self.null_row[m] = None
+        self.column_transformer = preprocessor_factory(self.schema_out)
 
     def set_output(self, *, transform=None):
         return self
 
     def _sk_visual_block_(self):
-        return self.column_transfomer._sk_visual_block_()
+        return self.column_transformer._sk_visual_block_()
 
     def _json_normalize(self, x):
         return json_normalize(
@@ -81,30 +75,32 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
 
     def _transform(self, X):
         assert X.shape[1] == 1, "ColumnNormalizer can only handle a single column"
-        Xt = X[self.field.name].explode()
-        Xt = Xt.apply(lambda x: x if x is not None else self.null_row)
+        Xt = X[self.field.name].explode().dropna()
         Xt = self._json_normalize(Xt)
         Xt = Xt.rename(columns={c: f"{self.field.name}.{c}" for c in Xt.columns if not c.startswith(self.field.name)})
         return Xt
 
-    def _flatten(self, X):
+    def _flatten(self, X, idx: pd.Index):
         Xt = X.groupby(X.index).agg(lambda x: x.tolist())
         Xt = Xt.apply(lambda row: np.array([*row]), axis=1)
-        return Xt.to_frame(name=self.field.name)
+        Xt = Xt.reindex(idx)
+        Xt = Xt.apply(lambda x: x if hasattr(x, "__len__") else np.array([[]]))  # fixme
+        Xt = Xt.to_frame(name=self.field.name)
+        return Xt
 
     def fit_transform(self, X, y=None, **fit_params: dict):
         Xt = self._transform(X)
         index = Xt.index
-        for _, _, columns in self.column_transfomer.transformers:
+        for _, _, columns in self.column_transformer.transformers:
             for column in columns:
                 if column not in Xt.columns:
                     raise ValueError(
                         f"Column {column} not found in input data {Xt.columns} for field {self.field.name} "
                         + "(hint: either check the record path or add it to the remove list in the config file)"
                     )
-        Xt = self.column_transfomer.fit_transform(Xt, y, **fit_params)
+        Xt = self.column_transformer.fit_transform(Xt, y, **fit_params)
         Xt = pd.DataFrame(Xt, index=index)
-        Xt = self._flatten(Xt)
+        Xt = self._flatten(Xt, X.index)
         return Xt
 
     def fit(self, X, y=None, **fit_params: dict):
@@ -118,7 +114,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             # This should only be the case when every value in X was None, TODO verify
             n = X.shape[0]
             Xt = pd.DataFrame({field.name: [None] * n for field in self.schema_out}, index=X.index)
-        Xt = self.column_transfomer.transform(Xt)
+        Xt = self.column_transformer.transform(Xt)
         Xt = pd.DataFrame(Xt, index=index)
-        Xt = self._flatten(Xt)
+        Xt = self._flatten(Xt, X.index)
         return Xt

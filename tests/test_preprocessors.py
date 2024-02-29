@@ -65,10 +65,10 @@ def test_normalize_array(feature_store):
     assert isinstance(Xt, pd.DataFrame)
     expected = pd.DataFrame(
         {
-            "arr.a": [1.0, 3.0, np.nan, np.nan, 5.0, 7.0, 9.0],
-            "arr.b": [2.0, 4.0, np.nan, np.nan, 6.0, 8.0, 10.0],
+            "arr.a": [1.0, 3.0, 5.0, 7.0, 9.0],
+            "arr.b": [2.0, 4.0, 6.0, 8.0, 10.0],
         },
-        index=pd.Index([1, 1, 2, 3, 4, 4, 4], name="id"),
+        index=pd.Index([1, 1, 4, 4, 4], name="id"),
     )
     pd.testing.assert_frame_equal(Xt.astype(float), expected.astype(float))
 
@@ -81,20 +81,14 @@ def test_fit_array_preprocessor(feature_store):
     df = feature_store.read_parquet()
     Xt = preprocessor.fit_transform(df[columns])
     assert isinstance(Xt, pd.DataFrame)
-    print(Xt)
     expected = pd.DataFrame(
         {
             "arr": [
-                np.array([[-0.22522522509098053, 0.0], [-0.2024291455745697, 0.0], [0.0, 0.0], [0.0, 0.0]]),
-                np.array([[-0.3378378450870514], [-0.4048582911491394], [1.0], [1.0]]),
-                np.array([[-0.3378378450870514], [-0.4048582911491394], [1.0], [1.0]]),
+                np.array([[-0.5102040767669678, -0.2551020383834839], [-0.5102040767669678, -0.2551020383834839]]),
+                np.array([[]]),
+                np.array([[]]),
                 np.array(
-                    [
-                        [0.22522522509098053, 0.45045045018196106, 0.6756756901741028],
-                        [0.2024291455745697, 0.4048582911491394, 0.6072874665260315],
-                        [0.0, 0.0, 0.0],
-                        [0.0, 0.0, 0.0],
-                    ]
+                    [[0.0, 0.2551020383834839, 0.5102040767669678], [0.0, 0.2551020383834839, 0.5102040767669678]]
                 ),
             ],
         },
@@ -165,8 +159,6 @@ def test_inference_all_null_values(feature_store):
     assert all(pd.isna(dat))
     Xt = column_transformer.transform(dat)
     assert isinstance(Xt, pd.DataFrame)
-    for col in Xt.columns:
-        print(Xt[col])
     expected = pd.DataFrame(
         {
             "numeric__numeric__num": [0.0],
@@ -174,9 +166,7 @@ def test_inference_all_null_values(feature_store):
             "categorical__cat": [0.0],
             "boolean__bool": [-1.0],
             "timestamp__timestamp__ts": [-12419.6669921875],
-            "arr__arr": [
-                np.array([[-0.3378378450870514], [-0.4048582911491394], [1.0], [1.0]]),
-            ],
+            "arr__arr": [np.array([[]])],
         },
         index=pd.Index([1], name="id"),
     )
