@@ -105,7 +105,8 @@ class StandardOutcomes(BaseOutcomes):
         return train, test
 
     def get_metadata(self) -> pd.Series:
-        df = self.read_parquet(columns=[self.timestamp_column])
+        df = self.read_parquet(columns=[self.timestamp_column, self.index_column])
+        df = df.set_index(self.index_column)
         df = df[self.timestamp_column]
         df = df.dropna()
         # df = df.sort_values()
