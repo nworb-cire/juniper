@@ -86,6 +86,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
 
     def fit_transform(self, X, y=None, **fit_params: dict):
         Xt = self._transform(X)
+        assert not Xt.empty, f"ColumnNormalizer encountered empty column {self.field.name} in input data"
         index = Xt.index
         # TODO: pass feature store class to get metadata directly
         _column_transformer = self.preprocessor_factory(self.schema_out)
@@ -94,7 +95,9 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
                 if column not in Xt.columns:
                     logging.warning(
                         f"Encountered empty column {column} in input data for {self.field.name}. "
-                        + "Will remove from output."
+                        + "Will remove from output.\n"
+                        "(Hint: This may be due to a missing feature, or due to a nested JSON structure that needs to "
+                        + "be specified in the configuration.)"
                     )
                     self.schema_out = self.schema_out.remove(self.schema_out.get_field_index(column))
         self.column_transformer = self.preprocessor_factory(self.schema_out)
