@@ -27,12 +27,13 @@ class BaseFeatureStore(BaseDataSource, ABC):
     def _load_train_test(
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-        df = self.read_parquet(
-            filters=[(self.index_column, "in", train_idx.union(test_idx).tolist())],
+        train = self.read_parquet(
+            filters=[(self.index_column, "in", train_idx.tolist())],
         )
-        train = df.reindex(train_idx)
         if test_idx is not None:
-            test = df.reindex(test_idx)
+            test = self.read_parquet(
+                filters=[(self.index_column, "in", test_idx.tolist())],
+            )
         else:
             test = None
         return train, test
@@ -89,7 +90,11 @@ class ParquetFeatureStore(BaseFeatureStore, ABC):
 
 class LocalParquetFeatureStore(ParquetFeatureStore):
     def get_schema(self) -> pa.Schema:
-        return pq.read_schema(self.path)
+        if self.path.is_dir():
+            path = next(self.path.iterdir())
+        else:
+            path = self.path
+        return pq.read_schema(path)
 
     def read_parquet(
         self, path: Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
