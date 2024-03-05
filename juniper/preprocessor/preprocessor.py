@@ -1,4 +1,5 @@
 import logging
+from functools import partial
 
 import pyarrow as pa
 from sklearn.compose import ColumnTransformer
@@ -23,6 +24,7 @@ def get_preprocessor(
     categorical_pipeline: Pipeline | None = None,
     boolean_pipeline: Pipeline | None = None,
     timestamp_pipeline: Pipeline | None = None,
+    prefix: str = "",
 ) -> ColumnTransformer:
     if schema is None:
         schema = feature_store.schema
@@ -32,31 +34,32 @@ def get_preprocessor(
     if columns := metadata.get(FeatureType.NUMERIC):
         if numeric_pipeline is None:
             numeric_pipeline = get_default_numeric_pipeline(columns)
-        transformers.append(("numeric", numeric_pipeline, columns))
+        transformers.append((f"{prefix}numeric", numeric_pipeline, columns))
 
     if columns := metadata.get(FeatureType.CATEGORICAL):
         if categorical_pipeline is None:
             categorical_pipeline = get_default_categorical_pipeline(columns)
-        transformers.append(("categorical", categorical_pipeline, columns))
+        transformers.append((f"{prefix}categorical", categorical_pipeline, columns))
 
     if columns := metadata.get(FeatureType.BOOLEAN):
         if boolean_pipeline is None:
             boolean_pipeline = get_default_boolean_pipeline(columns)
-        transformers.append(("boolean", boolean_pipeline, columns))
+        transformers.append((f"{prefix}boolean", boolean_pipeline, columns))
 
     if columns := metadata.get(FeatureType.TIMESTAMP):
         if timestamp_pipeline is None:
             timestamp_pipeline = get_default_timestamp_pipeline(columns)
-        transformers.append(("timestamp", timestamp_pipeline, columns))
+        transformers.append((f"{prefix}timestamp", timestamp_pipeline, columns))
 
     if columns := metadata.get(FeatureType.ARRAY):
         config = load_config()
         for column in columns:
             feature_metadata = config["data_sources"]["feature_store"].get("feature_meta", {}).get(column, {})
+            factory = partial(get_preprocessor, feature_store=feature_store, prefix=f"{prefix}{column}.")
             try:
                 transformer = ColumnNormalizer(
                     field=schema.field(column),
-                    preprocessor_factory=lambda x: get_preprocessor(feature_store, schema=x),
+                    preprocessor_factory=factory,
                     record_path=feature_metadata.get("record_path"),
                     meta=feature_metadata.get("meta"),
                 )

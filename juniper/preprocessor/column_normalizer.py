@@ -89,7 +89,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         assert not Xt.empty, f"ColumnNormalizer encountered empty column {self.field.name} in input data"
         index = Xt.index
         # TODO: pass feature store class to get metadata directly
-        _column_transformer = self.preprocessor_factory(self.schema_out)
+        _column_transformer = self.preprocessor_factory(schema=self.schema_out)
         for _, _, columns in _column_transformer.transformers:
             for column in columns:
                 if column not in Xt.columns:
@@ -100,7 +100,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
                         + "be specified in the configuration.)"
                     )
                     self.schema_out = self.schema_out.remove(self.schema_out.get_field_index(column))
-        self.column_transformer = self.preprocessor_factory(self.schema_out)
+        self.column_transformer = self.preprocessor_factory(schema=self.schema_out)
         Xt = self.column_transformer.fit_transform(Xt, y, **fit_params)
         Xt = pd.DataFrame(Xt, index=index)
         Xt = self._flatten(Xt, X.index)

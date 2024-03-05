@@ -130,7 +130,7 @@ def test_array_field_schema(feature_store):
 def test_array_unusable(feature_type, expected_n_transformers, expect_arr, feature_store):
     field = feature_store.schema.field("arr")
     schema = pa.schema(
-        [feature_store.schema.field_by_name(name) for name in feature_store.schema.names if name != field.name]
+        [feature_store.schema.field(name) for name in feature_store.schema.names if name != field.name]
     ).append(field.with_metadata({"usable_type": f'[{{"a": "{feature_type}", "b": "{FeatureType.UNUSABLE}"}}]'}))
     column_transformer = get_preprocessor(feature_store, schema)
     assert len(column_transformer.transformers) == expected_n_transformers
