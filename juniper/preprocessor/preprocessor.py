@@ -55,11 +55,12 @@ def get_preprocessor(
         config = load_config()
         for column in columns:
             feature_metadata = config["data_sources"]["feature_store"].get("feature_meta", {}).get(column, {})
-            factory = partial(get_preprocessor, feature_store=feature_store, prefix=f"{prefix}{column}.")
             try:
                 transformer = ColumnNormalizer(
                     field=schema.field(column),
-                    preprocessor_factory=factory,
+                    preprocessor_factory=partial(
+                        get_preprocessor, feature_store=feature_store, prefix=f"{prefix}{column}."
+                    ),
                     record_path=feature_metadata.get("record_path"),
                     meta=feature_metadata.get("meta"),
                 )

@@ -54,6 +54,8 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         ):
             raise ValueError(f"Array column {self.field.name} is unusable and will be dropped")
 
+        self.column_transformer = self.preprocessor_factory(schema=self.schema_out)
+
     def set_output(self, *, transform=None):
         return self
 
@@ -89,8 +91,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         assert not Xt.empty, f"ColumnNormalizer encountered empty column {self.field.name} in input data"
         index = Xt.index
         # TODO: pass feature store class to get metadata directly
-        _column_transformer = self.preprocessor_factory(schema=self.schema_out)
-        for _, _, columns in _column_transformer.transformers:
+        for _, _, columns in self.column_transformer.transformers:
             for column in columns:
                 if column not in Xt.columns:
                     logging.warning(

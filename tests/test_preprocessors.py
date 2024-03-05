@@ -1,3 +1,5 @@
+from functools import partial
+
 import numpy as np
 import pandas as pd
 import pyarrow as pa
@@ -44,7 +46,9 @@ def test_fit_preprocessor(feature_type, expected, feature_store):
 
 def test_get_array_metadata(feature_store):
     field = feature_store.schema.field("arr")
-    cn = ColumnNormalizer(field=field, preprocessor_factory=lambda x: get_preprocessor(feature_store, schema=x))
+    cn = ColumnNormalizer(
+        field=field, preprocessor_factory=partial(get_preprocessor, feature_store=feature_store, prefix="arr.")
+    )
     assert cn.schema_out is not None
     metadata = feature_store.get_feature_metadata(cn.schema_out)
     assert metadata is not None
@@ -58,7 +62,7 @@ def test_normalize_array(feature_store):
     assert df is not None
     cn = ColumnNormalizer(
         field=feature_store.schema.field("arr"),
-        preprocessor_factory=lambda x: get_preprocessor(feature_store, schema=x),
+        preprocessor_factory=partial(get_preprocessor, feature_store=feature_store, prefix="arr."),
     )
     Xt = cn._transform(df)
     assert Xt is not None
