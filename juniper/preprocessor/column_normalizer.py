@@ -82,7 +82,9 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         Xt = X.groupby(X.index).agg(lambda x: x.tolist())
         Xt = Xt.apply(lambda row: np.array([*row]), axis=1)
         Xt = Xt.reindex(idx)
-        Xt = Xt.apply(lambda x: x if hasattr(x, "__len__") else np.array([[]]))  # fixme
+        # TODO: I'm sure there's a better way of getting the output shape
+        N = max(v.stop for v in self.column_transformer.output_indices_.values())
+        Xt = Xt.apply(lambda x: x if hasattr(x, "__len__") else np.zeros((N, 1)))  # fixme: __len__ is kind of hacky
         Xt = Xt.to_frame(name=self.field.name)
         return Xt
 

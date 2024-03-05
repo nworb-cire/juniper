@@ -89,8 +89,8 @@ def test_fit_array_preprocessor(feature_store):
         {
             "arr": [
                 np.array([[-0.5102040767669678, -0.2551020383834839], [-0.5102040767669678, -0.2551020383834839]]),
-                np.array([[]]),
-                np.array([[]]),
+                np.array([[0.0], [0.0]]),
+                np.array([[0.0], [0.0]]),
                 np.array(
                     [[0.0, 0.2551020383834839, 0.5102040767669678], [0.0, 0.2551020383834839, 0.5102040767669678]]
                 ),
@@ -170,7 +170,7 @@ def test_inference_all_null_values(feature_store):
             "categorical__cat": [0.0],
             "boolean__bool": [-1.0],
             "timestamp__timestamp__ts": [-12419.6669921875],
-            "arr__arr": [np.array([[]])],
+            "arr__arr": [np.array([[0.0], [0.0]])],
         },
         index=pd.Index([1], name="id"),
     )
