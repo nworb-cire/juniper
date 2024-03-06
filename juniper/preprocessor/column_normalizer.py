@@ -79,12 +79,11 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         return Xt
 
     def _flatten(self, X, idx: pd.Index):
-        Xt = X.groupby(X.index).agg(lambda x: x.tolist())
-        Xt = Xt.apply(lambda row: np.array([*row]), axis=1)
+        Xt = X.groupby(X.index).agg(list).apply(list, axis=1)
         Xt = Xt.reindex(idx)
         # TODO: I'm sure there's a better way of getting the output shape
         N = max(v.stop for v in self.column_transformer.output_indices_.values())
-        Xt = Xt.apply(lambda x: x if hasattr(x, "__len__") else np.zeros((N, 1)))  # fixme: __len__ is kind of hacky
+        Xt = Xt.apply(lambda x: x if isinstance(x, list) else np.zeros((N, 1)).tolist())
         Xt = Xt.to_frame(name=self.field.name)
         return Xt
 
