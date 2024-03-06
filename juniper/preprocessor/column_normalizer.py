@@ -32,7 +32,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             self.record_prefix = f"{self.field.name}."
         else:
             self.record_prefix = f"{self.field.name}.{self.record_path}."
-        self.meta_prefix = f"{self.field.name}."
+        self.meta_prefix = f"{self.field.name}_meta."
 
         schema_out = schema_tools.get_field_schema(field)
         # remove fields that will not be in the schema
@@ -45,7 +45,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             ):
                 logging.debug(f"Removing field {field.name}")
                 remove_list.append(field.name)
-        schema_out = pa.schema([field for field in schema_out if field.name not in remove_list])
+        schema_out = pa.schema(set([field for field in schema_out if field.name not in remove_list]))
         self.schema_out = schema_out
 
         if (

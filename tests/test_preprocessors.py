@@ -52,7 +52,7 @@ def test_get_array_metadata(feature_store):
     assert cn.schema_out is not None
     metadata = feature_store.get_feature_metadata(cn.schema_out)
     assert metadata is not None
-    assert metadata == {
+    assert dict(metadata) == {
         FeatureType.NUMERIC: ["arr.a", "arr.b"],
     }
 

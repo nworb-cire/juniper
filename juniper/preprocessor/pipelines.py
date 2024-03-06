@@ -23,7 +23,7 @@ def get_default_numeric_pipeline(columns: list[str]) -> Pipeline:
                                     ("scaler", RobustScaler(quantile_range=(1.0, 99.0))),
                                 ]
                             ),
-                            slice(len(columns)),  # This needs to be a slice since the imputer returns a np array
+                            columns,
                         )
                     ],
                     remainder="passthrough",
@@ -71,7 +71,7 @@ def get_default_timestamp_pipeline(columns: list[str]) -> Pipeline:
                                     ("scaler", RobustScaler()),
                                 ]
                             ),
-                            slice(len(columns)),
+                            columns,
                         )
                     ],
                     remainder="passthrough",
