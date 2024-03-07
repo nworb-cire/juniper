@@ -3,5 +3,5 @@ models/
 notebooks/
 .idea/
 *_cache/
-*/__pycache__/
+__pycache__/
 data/
