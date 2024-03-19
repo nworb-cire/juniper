@@ -10,26 +10,8 @@ from juniper.preprocessor.constant_imputer import ConstantImputer
 def get_default_numeric_pipeline(columns: list[str]) -> Pipeline:
     return Pipeline(
         steps=[
-            ("imputer", ConstantImputer(add_indicator=True)),
-            (
-                "scaler",
-                ColumnTransformer(  # Scale only the numeric columns
-                    transformers=[
-                        (
-                            "numeric",
-                            Pipeline(
-                                steps=[
-                                    ("typecast", CastTransformer()),
-                                    ("scaler", RobustScaler(quantile_range=(1.0, 99.0))),
-                                ]
-                            ),
-                            columns,
-                        )
-                    ],
-                    remainder="passthrough",
-                ),
-            ),
-            ("typecast", CastTransformer()),
+            ("imputer", ConstantImputer(add_indicator=False)),  # FIXME: indicator not exporting
+            ("scaler", RobustScaler(quantile_range=(1.0, 99.0))),
         ]
     )
 

@@ -27,7 +27,8 @@ def test_get_preprocessor(feature_store):
 @pytest.mark.parametrize(
     "feature_type, expected",
     [
-        (FeatureType.NUMERIC, np.array([[0.5154639, 0.0, -0.5154639, 0.0], [0.0, 0.0, 0.0, 1.0]])),
+        (FeatureType.NUMERIC, [0.5154639, 0.0, -0.5154639, 0.0]),
+        # (FeatureType.NUMERIC, np.array([[0.5154639, 0.0, -0.5154639, 0.0], [0.0, 0.0, 0.0, 1.0]])),
         (FeatureType.CATEGORICAL, [0.0, 3.0, 1.0, 2.0]),
         (FeatureType.BOOLEAN, [1.0, 1.0, -1.0, 0.0]),
         (FeatureType.TIMESTAMP, [-1.0, -1 / 3, 1 / 3, 1.0]),
@@ -158,15 +159,14 @@ def test_inference_all_null_values(feature_store):
 
     # create empty dataframe
     dat = df.head(1)
-    for col in dat.columns:
-        dat[col] = float("nan")
+    dat = dat.apply(lambda x: [float("nan")] * len(x))
     assert all(pd.isna(dat))
     Xt = column_transformer.transform(dat)
     assert isinstance(Xt, pd.DataFrame)
     expected = pd.DataFrame(
         {
-            "numeric__numeric__num": [0.0],
-            "numeric__remainder__missingindicator_num": [1.0],
+            "numeric__num": [0.0],
+            # "numeric__missingindicator_num": [1.0],
             "categorical__cat": [-1.0],
             "boolean__bool": [-1.0],
             "timestamp__timestamp__ts": [-12419.6669921875],
