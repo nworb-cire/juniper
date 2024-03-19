@@ -85,7 +85,7 @@ class ParquetFeatureStore(BaseFeatureStore, ABC):
                 case _:
                     columns[FeatureType.UNUSABLE].append(field.name)
 
-        return columns
+        return {k: list(sorted(v)) for k, v in columns.items()}
 
 
 class LocalParquetFeatureStore(ParquetFeatureStore):

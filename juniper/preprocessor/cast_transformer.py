@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+from skl2onnx import update_registered_converter
+from skl2onnx.operator_converters.cast_op import convert_sklearn_cast
+from skl2onnx.shape_calculators.cast_op import calculate_sklearn_cast_transformer
 from sklearn.base import TransformerMixin, BaseEstimator
 
 
@@ -38,6 +41,14 @@ class CastTransformer(TransformerMixin, BaseEstimator):
 
     def transform(self, X, y=None):
         return self._cast(X)
+
+
+update_registered_converter(
+    CastTransformer,
+    "JuniperCastTransformer",
+    calculate_sklearn_cast_transformer,
+    convert_sklearn_cast,
+)
 
 
 class DatetimeCastTransformer(CastTransformer):
