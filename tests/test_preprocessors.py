@@ -159,7 +159,7 @@ def test_inference_all_null_values(feature_store):
 
     # create empty dataframe
     dat = df.head(1)
-    dat = dat.apply(lambda x: [float("nan")] * len(x))
+    dat = dat.apply(lambda x: [None] * len(x))
     assert all(pd.isna(dat))
     Xt = column_transformer.transform(dat)
     assert isinstance(Xt, pd.DataFrame)
@@ -167,7 +167,7 @@ def test_inference_all_null_values(feature_store):
         {
             "numeric__num": [0.0],
             # "numeric__missingindicator_num": [1.0],
-            "categorical__cat": [-1.0],
+            "categorical__cat": [3.0],
             "boolean__bool": [-1.0],
             "timestamp__timestamp__ts": [-12419.6669921875],
             "arr__arr": [np.array([[0.0], [0.0]])],
