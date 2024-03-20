@@ -39,4 +39,5 @@ def test_runtime(feature_store, onnx_schema):
             input[node.name] = np.array([[None]], dtype=np.float32)
     output = sess.run(None, input)
     assert output is not None
-    print(output)
+    expected = np.array([0.0, 3.0, -1.0, -0.6377551, -0.7653061])
+    assert np.allclose(output[0], expected)
