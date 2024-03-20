@@ -41,9 +41,11 @@ def test_runtime(feature_store, onnx_schema):
             input[node.name] = np.array([[None]], dtype=np.str_)
         else:
             input[node.name] = np.array([[None]], dtype=np.float32)
-    output = sess.run(None, input)
+    output = sess.run(["test_output", "test_arr_output"], input)
     assert output is not None
     assert len(output) == 2
+    expected = np.array([0.0, 3.0, -1.0])
+    assert np.allclose(output[0], expected)
     expected = np.array(
         [
             [-0.6377551, -0.7653061],
@@ -51,6 +53,4 @@ def test_runtime(feature_store, onnx_schema):
             [-0.6377551, -0.7653061],
         ]
     )
-    assert np.allclose(output[0], expected)
-    expected = np.array([0.0, 3.0, -1.0])
     assert np.allclose(output[1], expected)

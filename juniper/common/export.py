@@ -56,6 +56,15 @@ def to_onnx(column_transformer: ColumnTransformer, name: str):
         initial_types=get_onnx_types(ct_out),
         naming=name + "_",
     )
+    # rename output
+    assert len(model_onnx.graph.output) == 1
+    output_name = model_onnx.graph.output[0].name
+    model_onnx.graph.output[0].name = f"{name}_output"
+    for node in model_onnx.graph.node:
+        for i in range(len(node.output)):
+            if node.output[i] == output_name:
+                node.output[i] = f"{name}_output"
+    # merge subgraphs
     for sub in sub_transformers:
         # doing model_onnx.MergeFrom(sub) does not work due to skl2onnx potentially using different opset versions
         # for the sub-models
