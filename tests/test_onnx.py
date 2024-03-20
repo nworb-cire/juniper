@@ -3,6 +3,7 @@ import pyarrow as pa
 import pytest
 from onnxruntime import InferenceSession
 
+from juniper.common.data_type import FeatureType
 from juniper.common.export import to_onnx
 from juniper.preprocessor.preprocessor import get_preprocessor
 
@@ -11,9 +12,7 @@ from juniper.preprocessor.preprocessor import get_preprocessor
 def onnx_schema(feature_store):
     """Remove certain column types from the schema until they are ready to be supported"""
     schema = feature_store.get_schema()
-    return pa.schema(
-        [field for field in schema if field.metadata[b"usable_type"].decode() in ["numeric", "categorical", "boolean"]]
-    )
+    return pa.schema([field for field in schema if field.metadata[b"usable_type"].decode() != FeatureType.TIMESTAMP])
 
 
 def test_onnx_export(feature_store, onnx_schema):
@@ -37,12 +36,21 @@ def test_runtime(feature_store, onnx_schema):
     input = {}
     for node in sess.get_inputs():
         if node.name.startswith("arr"):
-            input[node.name] = np.array([[None, None, None]], dtype=np.float32)
+            input[node.name] = np.array([[None, None, None]], dtype=np.float32).reshape(-1, 1)
         elif node.type == "tensor(string)":
             input[node.name] = np.array([[None]], dtype=np.str_)
         else:
             input[node.name] = np.array([[None]], dtype=np.float32)
     output = sess.run(None, input)
     assert output is not None
-    expected = np.array([0.0, 3.0, -1.0])
+    assert len(output) == 2
+    expected = np.array(
+        [
+            [-0.6377551, -0.7653061],
+            [-0.6377551, -0.7653061],
+            [-0.6377551, -0.7653061],
+        ]
+    )
     assert np.allclose(output[0], expected)
+    expected = np.array([0.0, 3.0, -1.0])
+    assert np.allclose(output[1], expected)

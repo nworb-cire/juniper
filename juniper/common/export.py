@@ -57,6 +57,8 @@ def to_onnx(column_transformer: ColumnTransformer, name: str):
         naming=name + "_",
     )
     for sub in sub_transformers:
-        if sub is not None:
-            model_onnx.MergeFrom(sub)
+        # doing model_onnx.MergeFrom(sub) does not work due to skl2onnx potentially using different opset versions
+        # for the sub-models
+        sub.MergeFrom(model_onnx)
+        model_onnx = sub
     return model_onnx
