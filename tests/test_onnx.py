@@ -11,13 +11,8 @@ from juniper.preprocessor.preprocessor import get_preprocessor
 @pytest.fixture
 def onnx_schema(feature_store):
     """Remove certain column types from the schema until they are ready to be supported"""
-    supported_column_types = [
-        FeatureType.NUMERIC,
-        FeatureType.CATEGORICAL,
-        FeatureType.BOOLEAN,
-    ]
     schema = feature_store.get_schema()
-    return pa.schema([field for field in schema if field.metadata[b"usable_type"].decode() in supported_column_types])
+    return pa.schema([field for field in schema if field.metadata[b"usable_type"].decode() != FeatureType.TIMESTAMP])
 
 
 def test_onnx_export(feature_store, onnx_schema):
