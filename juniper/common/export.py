@@ -12,11 +12,11 @@ def feature_type_to_onnx_type(feature_type: FeatureType, arr: bool = False) -> T
         case FeatureType.ARRAY:
             raise ValueError("Must not call this function with array type")
         case FeatureType.NUMERIC:
-            return FloatTensorType([None, dim])
+            return FloatTensorType([dim, 1])
         case FeatureType.CATEGORICAL:
-            return StringTensorType([None, dim])
+            return StringTensorType([dim, 1])
         case FeatureType.BOOLEAN:
-            return FloatTensorType([None, dim])
+            return FloatTensorType([dim, 1])
         case FeatureType.TIMESTAMP:
             raise NotImplementedError("Timestamps not yet supported")
         case _:
@@ -41,12 +41,12 @@ def get_onnx_types(column_transformer: ColumnTransformer) -> list[tuple[str, Ten
 
 def to_onnx(column_transformer: ColumnTransformer, name: str):
     transformers = []
-    for name, t, cols in column_transformer.transformers_:
+    sub_transformers = []
+    for name_, t, cols in column_transformer.transformers_:
         if isinstance(t, ColumnNormalizer):
-            for name_, t_, cols_ in t.column_transformer.transformers_:
-                transformers.append((name_, t_, cols_))
+            sub_transformers.append(to_onnx(t.column_transformer, f"{name}_{name_}"))
         else:
-            transformers.append((name, t, cols))
+            transformers.append((name_, t, cols))
     ct_out = ColumnTransformer(transformers, remainder="drop")
     ct_out.transformers_ = transformers
 
@@ -54,5 +54,9 @@ def to_onnx(column_transformer: ColumnTransformer, name: str):
         model=ct_out,
         name=name,
         initial_types=get_onnx_types(ct_out),
+        naming=name + "_",
     )
+    for sub in sub_transformers:
+        if sub is not None:
+            model_onnx.MergeFrom(sub)
     return model_onnx
