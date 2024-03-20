@@ -1,4 +1,4 @@
-from onnxconverter_common import FloatTensorType, StringTensorType, BooleanTensorType, TensorType
+from onnxconverter_common import FloatTensorType, StringTensorType, TensorType
 from skl2onnx import convert_sklearn
 from sklearn.compose import ColumnTransformer
 
@@ -15,7 +15,7 @@ def get_onnx_types(column_transformer) -> list[tuple[str, TensorType]]:
                 case FeatureType.CATEGORICAL:
                     initial_types.append((col, StringTensorType([None, 1])))
                 case FeatureType.BOOLEAN:
-                    initial_types.append((col, BooleanTensorType([None, 1])))
+                    initial_types.append((col, FloatTensorType([None, 1])))
                 case FeatureType.TIMESTAMP:
                     raise NotImplementedError("Timestamps not yet supported")
                 case _:
