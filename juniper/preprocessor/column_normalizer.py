@@ -32,7 +32,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             self.record_prefix = f"{self.field.name}."
         else:
             self.record_prefix = f"{self.field.name}.{self.record_path}."
-        self.meta_prefix = f"{self.field.name}_meta."
+        self.meta_prefix = f"{self.field.name}."
 
         schema_out = schema_tools.get_field_schema(field)
         # remove fields that will not be in the schema
