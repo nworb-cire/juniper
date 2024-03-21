@@ -9,7 +9,7 @@ from pyarrow import parquet as pq
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
-from juniper.data_loading.data_source import BaseDataSource, S3DataSource
+from juniper.data_loading.data_source import BaseDataSource, S3DataSource, LocalDataSource
 
 
 class BaseFeatureStore(BaseDataSource, ABC):
@@ -106,19 +106,13 @@ class ParquetFeatureStore(BaseFeatureStore, ABC):
         return columns
 
 
-class LocalParquetFeatureStore(ParquetFeatureStore):
+class LocalParquetFeatureStore(ParquetFeatureStore, LocalDataSource):
     def get_schema(self) -> pa.Schema:
         if self.path.is_dir():
             path = next(self.path.iterdir())
         else:
             path = self.path
         return pq.read_schema(path)
-
-    def read_parquet(
-        self, path: Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
-    ) -> pd.DataFrame:
-        df = pd.read_parquet(self.path, columns=columns, filters=filters)
-        return df.set_index(self.index_column)
 
 
 class S3ParquetFeatureStore(ParquetFeatureStore, S3DataSource):

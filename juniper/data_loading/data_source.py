@@ -52,6 +52,19 @@ class BaseDataSource(ABC):
         return ret
 
 
+class LocalDataSource(BaseDataSource, ABC):
+    def __init__(self, path: Path):
+        super().__init__(path)
+    
+    def read_parquet(
+        self, path: Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
+    ) -> pd.DataFrame:
+        if path is None:
+            path = self.path
+        df = pd.read_parquet(path, columns=columns, filters=filters)
+        return df.set_index(self.index_column)
+
+
 class S3DataSource(BaseDataSource, ABC):
     def __init__(
         self,

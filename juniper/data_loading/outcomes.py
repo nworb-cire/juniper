@@ -8,10 +8,10 @@ import pandas as pd
 from s3path import S3Path
 
 from juniper.common.setup import load_config
-from juniper.data_loading.data_source import S3DataSource
+from juniper.data_loading.data_source import S3DataSource, BaseDataSource, LocalDataSource
 
 
-class BaseOutcomes(S3DataSource, ABC):
+class BaseOutcomes(BaseDataSource, ABC):
     metadata: pd.Series
 
     def __init__(self, path: S3Path = None):
@@ -39,7 +39,7 @@ class BaseOutcomes(S3DataSource, ABC):
         raise NotImplementedError
 
 
-class PivotedOutcomes(BaseOutcomes):
+class PivotedOutcomes(BaseOutcomes, S3DataSource):
     def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: datetime):
         df = df.filter(lambda row: row[self.timestamp_column] < train_time_end)
         return df
@@ -72,7 +72,7 @@ class PivotedOutcomes(BaseOutcomes):
         raise NotImplementedError
 
 
-class StandardOutcomes(BaseOutcomes):
+class StandardOutcomes(BaseOutcomes, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         config = load_config()
@@ -111,3 +111,7 @@ class StandardOutcomes(BaseOutcomes):
         # df = df.sort_values()
         self.metadata = df
         return df
+
+
+class LocalStandardOutcomes(StandardOutcomes, LocalDataSource):
+    pass
