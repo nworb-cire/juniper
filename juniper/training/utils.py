@@ -25,24 +25,24 @@ def unpack(vals):
 def onnx_name_to_pd_name(name: str) -> str | None:
     if name == "output":
         return None
-    assert name.endswith("_output")
+    assert name.endswith("_arr")
     name = name[:-7]
     return f"{name}__{name}"
 
 
 def _to_tensor(model, x: pd.DataFrame) -> dict[str, torch.Tensor]:
-    pd_names = [onnx_name_to_pd_name(name) for name in model.inputs.keys() if name != "output"]
-    x_arr = {name: unpack(x[onnx_name_to_pd_name(name)].values) for name in model.inputs.keys() if name != "output"}
+    pd_names = [onnx_name_to_pd_name(name) for name in model.inputs.keys() if name != "features"]
+    x_arr = {name: unpack(x[onnx_name_to_pd_name(name)].values) for name in model.inputs.keys() if name != "features"}
     for name, arr in x_arr.items():
         assert arr.shape[0] == x.shape[0]
         assert arr.shape[1] == model.inputs[name]
 
     x = x[[c for c in x.columns if c not in pd_names]].values
-    assert x.shape[1] == model.inputs["output"]
+    assert x.shape[1] == model.inputs["features"]
     x = torch.tensor(x, dtype=torch.float32)
 
     x_arr = {k.replace(".", "_"): torch.tensor(v, dtype=torch.float32) for k, v in x_arr.items()}
-    return {"output": x, **x_arr}
+    return {"features": x, **x_arr}
 
 
 def batches(x: pd.DataFrame, y: pd.DataFrame, batch_size: int):

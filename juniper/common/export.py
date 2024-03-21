@@ -64,7 +64,7 @@ def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
     # rename output
     assert len(model_onnx.graph.output) == 1
     output_node_name = model_onnx.graph.output[0].name
-    renamed_node_name = "output" if name is None else f"{name}_output"
+    renamed_node_name = "features" if name is None else f"{name}_arr"
     model_onnx.graph.output[0].name = renamed_node_name
     for node in model_onnx.graph.node:
         for i in range(len(node.output)):
