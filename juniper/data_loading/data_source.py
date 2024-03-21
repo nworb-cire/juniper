@@ -14,10 +14,7 @@ class BaseDataSource(ABC):
     index_column: str
     timestamp_column: str
 
-    def __init__(
-        self,
-        path: Path,
-    ):
+    def __init__(self, path: Path):
         self.path = path
         config = load_config()
         self.index_column = config["data_sources"]["index_column"]
@@ -75,10 +72,7 @@ class LocalDataSource(BaseDataSource, ABC):
 
 
 class S3DataSource(BaseDataSource, ABC):
-    def __init__(
-        self,
-        path: S3Path,
-    ):
+    def __init__(self, path: S3Path):
         super().__init__(path)
 
     @property

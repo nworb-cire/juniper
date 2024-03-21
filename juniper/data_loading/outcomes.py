@@ -88,7 +88,7 @@ class StandardOutcomes(BaseOutcomes, ABC):
             cols = [c for c in df.columns if c.endswith(f"_{offset}")]
             delta_holdout_date = train_time_end - pd.Timedelta(days=offset)
             for col in cols:
-                df[col] = df[col].mask(df[self.timestamp_column] >= delta_holdout_date, None)
+                df[col] = df[col].mask(df[self.timestamp_column].dt.date >= delta_holdout_date, None)
         return df
 
     def _load_train_test(
