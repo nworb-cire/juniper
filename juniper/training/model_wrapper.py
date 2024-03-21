@@ -77,4 +77,19 @@ class Model:
         return avg_test_loss
 
     def save(self, path: str):
-        raise NotImplementedError
+        dummy_input = {"output": torch.zeros((1, self.model_inputs["output"]), dtype=torch.float32)}
+        dummy_input.update(
+            {
+                name.replace(".", "_"): torch.zeros((1, size, 1), dtype=torch.float32)
+                for name, size in self.model_inputs.items()
+                if name != "output"
+            }
+        )
+        torch.onnx.export(
+            self.model,
+            args=(dummy_input, {}),
+            f=path,
+            input_names=list(dummy_input.keys()),
+            output_names=["output"],
+            dynamic_axes={k: [2] for k, v in self.model_inputs.items() if k != "output"},
+        )
