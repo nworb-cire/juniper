@@ -39,12 +39,12 @@ def get_onnx_types(column_transformer: ColumnTransformer) -> list[tuple[str, Ten
     return initial_types
 
 
-def to_onnx(column_transformer: ColumnTransformer, name: str):
+def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
     transformers = []
     sub_transformers = []
     for name_, t, cols in column_transformer.transformers_:
         if isinstance(t, ColumnNormalizer):
-            sub_transformers.append(to_onnx(t.column_transformer, f"{name}_{name_}"))
+            sub_transformers.append(_to_onnx(t.column_transformer, name_))
         else:
             transformers.append((name_, t, cols))
     ct_out = ColumnTransformer(transformers, remainder="drop")
@@ -52,18 +52,19 @@ def to_onnx(column_transformer: ColumnTransformer, name: str):
 
     model_onnx = convert_sklearn(
         model=ct_out,
-        name=name,
+        name=name if name is not None else "base",
         initial_types=get_onnx_types(ct_out),
-        naming=name + "_",
+        naming=name + "_" if name is not None else "",
     )
     # rename output
     assert len(model_onnx.graph.output) == 1
-    output_name = model_onnx.graph.output[0].name
-    model_onnx.graph.output[0].name = f"{name}_output"
+    output_node_name = model_onnx.graph.output[0].name
+    renamed_node_name = "output" if name is None else f"{name}_output"
+    model_onnx.graph.output[0].name = renamed_node_name
     for node in model_onnx.graph.node:
         for i in range(len(node.output)):
-            if node.output[i] == output_name:
-                node.output[i] = f"{name}_output"
+            if node.output[i] == output_node_name:
+                node.output[i] = renamed_node_name
     # merge subgraphs
     for sub in sub_transformers:
         # doing model_onnx.MergeFrom(sub) does not work due to skl2onnx potentially using different opset versions
@@ -71,3 +72,8 @@ def to_onnx(column_transformer: ColumnTransformer, name: str):
         sub.MergeFrom(model_onnx)
         model_onnx = sub
     return model_onnx
+
+
+def to_onnx(column_transformer: ColumnTransformer):
+    # Separate method definition to prevent "name" from being specified at the top level
+    return _to_onnx(column_transformer)

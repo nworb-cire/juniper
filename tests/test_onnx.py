@@ -20,7 +20,7 @@ def test_onnx_export(feature_store, onnx_schema):
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 
-    model_onnx = to_onnx(column_transformer, "test")
+    model_onnx = to_onnx(column_transformer)
     assert model_onnx is not None
     with open("testcase.onnx", "wb") as f:
         f.write(model_onnx.SerializeToString())
@@ -31,7 +31,7 @@ def test_runtime(feature_store, onnx_schema):
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 
-    model_onnx = to_onnx(column_transformer, "test")
+    model_onnx = to_onnx(column_transformer)
     sess = InferenceSession(model_onnx.SerializeToString())
     input = {}
     for node in sess.get_inputs():
@@ -41,7 +41,7 @@ def test_runtime(feature_store, onnx_schema):
             input[node.name] = np.array([[None]], dtype=np.str_)
         else:
             input[node.name] = np.array([[None]], dtype=np.float32)
-    output = sess.run(["test_output", "test_arr_output"], input)
+    output = sess.run(["output", "arr_output"], input)
     assert output is not None
     assert len(output) == 2
     expected = np.array([0.0, 3.0, -1.0])
