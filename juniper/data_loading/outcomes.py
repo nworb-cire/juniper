@@ -2,9 +2,10 @@ import logging
 import re
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, date
 
 import pandas as pd
+import pytz
 from s3path import S3Path
 
 from juniper.common.setup import load_config
@@ -21,11 +22,13 @@ class BaseOutcomes(BaseDataSource, ABC):
         self.timestamp_column = config["data_sources"]["outcomes"]["timestamp_column"]
         super().__init__(path=path)
 
-    def index_range(self, start: datetime | None, end: datetime | None) -> pd.Index:
+    def index_range(self, start: date | None, end: date | None) -> pd.Index:
         if start is None:
-            start = self.min_timestamp()
+            start = self.min_timestamp().date()
         if end is None:
-            end = self.max_timestamp()
+            end = self.max_timestamp().date()
+        start = datetime(start.year, start.month, start.day, tzinfo=pytz.UTC)
+        end = datetime(end.year, end.month, end.day, tzinfo=pytz.UTC)
         return self.metadata[(self.metadata >= start) & (self.metadata < end)].index
 
     def min_timestamp(self) -> datetime:
@@ -45,7 +48,7 @@ class PivotedOutcomes(BaseOutcomes, S3DataSource):
         return df
 
     def load(self, idx, train_time_end: datetime | None = None):
-        logging.info(f"Loading outcomes from {self.path.as_uri()}")
+        logging.info(f"Loading outcomes from {self._path_str}")
         t = time.monotonic()
         df = self.read_parquet()
         df.filter(lambda row: row[self.index_column] in idx)
@@ -55,7 +58,7 @@ class PivotedOutcomes(BaseOutcomes, S3DataSource):
         return df
 
     def get_metadata(self):
-        logging.info(f"Loading outcomes metadata from {self.path.as_uri()}")
+        logging.info(f"Loading outcomes metadata from {self._path_str}")
         t = time.monotonic()
         df = self.read_parquet(columns=[self.index_column, self.timestamp_column]).to_pandas()
         df = df[~df[self.timestamp_column].isna()]

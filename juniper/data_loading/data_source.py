@@ -23,6 +23,11 @@ class BaseDataSource(ABC):
         self.index_column = config["data_sources"]["index_column"]
         self.get_metadata()
 
+    @property
+    @abstractmethod
+    def _path_str(self) -> str:
+        pass
+
     @abstractmethod
     def read_parquet(
         self,
@@ -45,7 +50,7 @@ class BaseDataSource(ABC):
     def load_train_test(
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-        logging.info(f"Loading {self.__class__.__name__} from {self.path.as_uri()}")
+        logging.info(f"Loading {self.__class__.__name__} from {self._path_str}")
         t = time.monotonic()
         ret = self._load_train_test(train_idx, test_idx, train_time_end)
         logging.info(f"Loaded {self.__class__.__name__} in {time.monotonic() - t:.3f} seconds")
@@ -55,7 +60,11 @@ class BaseDataSource(ABC):
 class LocalDataSource(BaseDataSource, ABC):
     def __init__(self, path: Path):
         super().__init__(path)
-    
+
+    @property
+    def _path_str(self) -> str:
+        return str(self.path.absolute())
+
     def read_parquet(
         self, path: Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
     ) -> pd.DataFrame:
@@ -71,6 +80,10 @@ class S3DataSource(BaseDataSource, ABC):
         path: S3Path,
     ):
         super().__init__(path)
+
+    @property
+    def _path_str(self) -> str:
+        return self.path.as_uri()
 
     def read_parquet(
         self,
