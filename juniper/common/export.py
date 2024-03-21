@@ -1,8 +1,13 @@
+import json
+from datetime import datetime
+
+import onnx
 from onnxconverter_common import FloatTensorType, StringTensorType, TensorType
 from skl2onnx import convert_sklearn
 from sklearn.compose import ColumnTransformer
 
 from juniper.common.data_type import FeatureType
+from juniper.common.setup import load_config
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
 
 
@@ -74,6 +79,25 @@ def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
     return model_onnx
 
 
+def add_metadata(model_onnx: onnx.ModelProto, key: str, value: str):
+    message_proto = onnx.StringStringEntryProto()
+    message_proto.key = key
+    message_proto.value = value
+    model_onnx.metadata_props.append(message_proto)
+
+
+def add_default_metadata(model_onnx: onnx.ModelProto):
+    config = load_config()
+    enabled_feature_types = config["data_sources"]["feature_store"]["enabled_feature_types"]
+    if FeatureType.ARRAY in enabled_feature_types:
+        feature_meta = config["data_sources"]["feature_store"].get("feature_meta", {})
+        add_metadata(model_onnx, "feature_meta", json.dumps(feature_meta))
+    add_metadata(model_onnx, "creation_date", str(datetime.utcnow()))
+    for k, v in config.get("model_info", {}).items():
+        add_metadata(model_onnx, k, v)
+
+
 def to_onnx(column_transformer: ColumnTransformer):
-    # Separate method definition to prevent "name" from being specified at the top level
-    return _to_onnx(column_transformer)
+    model_onnx = _to_onnx(column_transformer)
+    add_default_metadata(model_onnx)
+    return model_onnx
