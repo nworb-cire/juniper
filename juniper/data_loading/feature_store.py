@@ -61,11 +61,25 @@ class ParquetFeatureStore(BaseFeatureStore, ABC):
             field = schema.field(i)
             if field.name.startswith(override_unusable_features):  # TODO: glob
                 columns[FeatureType.UNUSABLE].append(field.name)
-                continue
-            if isinstance(field.type, pa.lib.ListType):
+            elif isinstance(field.type, pa.lib.ListType):
                 if FeatureType.ARRAY in enabled_feature_types:
                     columns[FeatureType.ARRAY].append(field.name)
-                    continue
+
+        # Some nested array fields may appear in the schema
+        for base_field_name in sorted(columns[FeatureType.ARRAY], key=len):
+            for field_name in columns[FeatureType.ARRAY]:
+                if field_name.startswith(base_field_name) and field_name != base_field_name:
+                    columns[FeatureType.UNUSABLE].append(field_name)
+        columns[FeatureType.ARRAY] = [c for c in columns[FeatureType.ARRAY] if c not in columns[FeatureType.UNUSABLE]]
+
+        for i in range(len(schema)):
+            field = schema.field(i)
+            if field.name.startswith(tuple(columns[FeatureType.ARRAY])):
+                print(field.name)
+                # Sometimes array fields may get extracted into a flattened schema if the array has length 1
+                if field.name not in columns[FeatureType.ARRAY]:
+                    columns[FeatureType.UNUSABLE].append(field.name)
+                continue
             match field.metadata[b"usable_type"].decode():
                 case FeatureType.NUMERIC:
                     if FeatureType.BOOLEAN in enabled_feature_types and field.type == pa.bool_():
@@ -85,7 +99,12 @@ class ParquetFeatureStore(BaseFeatureStore, ABC):
                 case _:
                     columns[FeatureType.UNUSABLE].append(field.name)
 
-        return {k: list(sorted(v)) for k, v in columns.items()}
+        for type_ in FeatureType:
+            columns[type_] = list(sorted(columns[type_]))
+            if not columns[type_]:
+                del columns[type_]
+
+        return columns
 
 
 class LocalParquetFeatureStore(ParquetFeatureStore):
