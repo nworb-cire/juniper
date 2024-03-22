@@ -39,7 +39,7 @@ def merge_models(m1: onnx.ModelProto, m2: onnx.ModelProto, io_map: list[tuple[st
     for opset in common_opset:
         set_opset(m1, opset["version"], opset["domain"])
         set_opset(m2, opset["version"], opset["domain"])
-    graph = onnx.compose.merge_graphs(m1.graph, m2.graph, io_map)
+    graph = onnx.compose.merge_graphs(m1.graph, m2.graph, io_map, doc_string=load_config()["model_info"]["doc_string"])
     return onnx.helper.make_model(graph)
 
 
@@ -126,6 +126,8 @@ def add_default_metadata(model_onnx: onnx.ModelProto):
         add_metadata(model_onnx, "feature_meta", json.dumps(feature_meta))
     add_metadata(model_onnx, "creation_date", str(datetime.utcnow()))
     for k, v in config.get("model_info", {}).items():
+        if k == "doc_string":
+            continue
         add_metadata(model_onnx, k, v)
 
 
