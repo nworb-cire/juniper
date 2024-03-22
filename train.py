@@ -1,8 +1,10 @@
 import importlib
 import os
 
+import onnx
 import pandas as pd
 
+from juniper.common.export import merge_models
 from juniper.common.setup import load_config
 from juniper.training.losses import MaskedBCEWithLogitsLoss
 from juniper.training.model_wrapper import Model
@@ -62,3 +64,10 @@ if __name__ == "__main__":
         print(f"Score for {date}: {score}")
     assert model is not None
     model.save("model.onnx")
+
+    preprocessor = onnx.load_model(f"data/processed/preprocessor_{date}.onnx")
+    # preprocessor = onnx.load_model("notebooks/test_preprocessor.onnx")
+    model = onnx.load_model("model.onnx")
+    io_mapping = [(node.name.replace(".", "_"), node.name) for node in model.graph.input]
+    new_model = merge_models(preprocessor, model, io_mapping)
+    onnx.save_model(new_model, "merged.onnx")

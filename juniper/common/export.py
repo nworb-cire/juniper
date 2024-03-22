@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from datetime import datetime
 
 import onnx
@@ -9,6 +10,36 @@ from sklearn.compose import ColumnTransformer
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
+
+
+def get_common_opset(*models: list[onnx.ModelProto]):
+    ret = defaultdict(int)
+    for model in models:
+        for opset in model.opset_import:
+            ret[opset.domain] = max(ret[opset.domain], opset.version)
+    return [{"domain": k, "version": v} for k, v in ret.items()]
+
+
+def clear_opset(model: onnx.ModelProto):
+    while len(model.opset_import) > 0:
+        model.opset_import.pop()
+
+
+def set_opset(model: onnx.ModelProto, version: int, domain: str = None):
+    opset = model.opset_import.add()
+    opset.version = version
+    if domain is not None:
+        opset.domain = domain
+
+
+def merge_models(m1: onnx.ModelProto, m2: onnx.ModelProto, io_mapping: list[tuple[str, str]]) -> onnx.ModelProto:
+    common_opset = get_common_opset(m1, m2)
+    clear_opset(m1)
+    clear_opset(m2)
+    for opset in common_opset:
+        set_opset(m1, opset["version"], opset["domain"])
+        set_opset(m2, opset["version"], opset["domain"])
+    return onnx.compose.merge_models(m1, m2, io_mapping)
 
 
 def feature_type_to_onnx_type(feature_type: FeatureType, arr: bool = False) -> TensorType:
@@ -45,6 +76,8 @@ def get_onnx_types(column_transformer: ColumnTransformer) -> list[tuple[str, Ten
 
 
 def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
+    if name is not None:
+        name = name.replace(".", "_")
     transformers = []
     sub_transformers = []
     for name_, t, cols in column_transformer.transformers_:
@@ -60,6 +93,7 @@ def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
         name=name if name is not None else "base",
         initial_types=get_onnx_types(ct_out),
         naming=name + "_" if name is not None else "",
+        target_opset=18,
     )
     # rename output
     assert len(model_onnx.graph.output) == 1
@@ -72,10 +106,7 @@ def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
                 node.output[i] = renamed_node_name
     # merge subgraphs
     for sub in sub_transformers:
-        # doing model_onnx.MergeFrom(sub) does not work due to skl2onnx potentially using different opset versions
-        # for the sub-models
-        sub.MergeFrom(model_onnx)
-        model_onnx = sub
+        model_onnx = merge_models(model_onnx, sub, [])
     return model_onnx
 
 
