@@ -30,10 +30,14 @@ class BaseFeatureStore(BaseDataSource, ABC):
         train = self.read_parquet(
             filters=[(self.index_column, "in", train_idx.tolist())],
         )
+        train = train.sort_values(self.timestamp_column)
+        train = train[~train.index.duplicated(keep="last")]
         if test_idx is not None:
             test = self.read_parquet(
                 filters=[(self.index_column, "in", test_idx.tolist())],
             )
+            test = test.sort_values(self.timestamp_column)
+            test = test[~test.index.duplicated(keep="last")]
         else:
             test = None
         return train, test

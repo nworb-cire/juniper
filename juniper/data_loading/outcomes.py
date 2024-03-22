@@ -29,7 +29,7 @@ class BaseOutcomes(BaseDataSource, ABC):
             end = self.max_timestamp().date()
         start = datetime(start.year, start.month, start.day, tzinfo=pytz.UTC)
         end = datetime(end.year, end.month, end.day, tzinfo=pytz.UTC)
-        return self.metadata[(self.metadata >= start) & (self.metadata < end)].index
+        return self.metadata[(self.metadata >= start) & (self.metadata < end)].index.unique()
 
     def min_timestamp(self) -> datetime:
         return self.metadata.min()
@@ -99,6 +99,8 @@ class StandardOutcomes(BaseOutcomes, ABC):
         )
         columns = [c for c in df.columns if c.startswith(self.binary_outcomes_list) and re.match(r"\w+_\d{1,4}$", c)]
         df = df[columns + [self.timestamp_column]]
+        df = df.sort_values(self.timestamp_column)
+        df = df[~df.index.duplicated(keep="last")]
         train = df.reindex(train_idx)
         train = self.filter_training_outcomes(train, train_time_end).drop(columns=[self.timestamp_column])
         if test_idx is not None:
