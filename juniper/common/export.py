@@ -1,6 +1,6 @@
 import json
-from collections import defaultdict
 from datetime import datetime
+from functools import reduce, partial
 
 import onnx
 from onnxconverter_common import FloatTensorType, StringTensorType, TensorType
@@ -12,35 +12,30 @@ from juniper.common.setup import load_config
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
 
 
-def get_common_opset(*models: list[onnx.ModelProto]):
-    ret = defaultdict(int)
-    for model in models:
-        for opset in model.opset_import:
-            ret[opset.domain] = max(ret[opset.domain], opset.version)
-    return [{"domain": k, "version": v} for k, v in ret.items()]
-
-
-def clear_opset(model: onnx.ModelProto):
+def set_opset(model: onnx.ModelProto, opset: list[onnx.OperatorSetIdProto]) -> onnx.ModelProto:
     while len(model.opset_import) > 0:
         model.opset_import.pop()
-
-
-def set_opset(model: onnx.ModelProto, version: int, domain: str = None):
-    opset = model.opset_import.add()
-    opset.version = version
-    if domain is not None:
-        opset.domain = domain
+    model.opset_import.extend(opset)
+    return model
 
 
 def merge_models(m1: onnx.ModelProto, m2: onnx.ModelProto, io_map: list[tuple[str, str]]) -> onnx.ModelProto:
-    common_opset = get_common_opset(m1, m2)
-    clear_opset(m1)
-    clear_opset(m2)
-    for opset in common_opset:
-        set_opset(m1, opset["version"], opset["domain"])
-        set_opset(m2, opset["version"], opset["domain"])
-    graph = onnx.compose.merge_graphs(m1.graph, m2.graph, io_map, doc_string=load_config()["model_info"]["doc_string"])
-    return onnx.helper.make_model(graph)
+    opset = [
+        onnx.helper.make_opsetid("", 17),
+        onnx.helper.make_opsetid("ai.onnx.ml", 2),
+    ]
+    set_opset(m1, opset)
+    set_opset(m2, opset)
+    new_model = onnx.compose.merge_models(
+        m1=m1,
+        m2=m2,
+        io_map=io_map,
+        producer_name="juniper",
+        doc_string=load_config().get("model_info", {}).get("doc_string", ""),
+    )
+    set_opset(new_model, opset)
+    # onnx.checker.check_model(new_model, full_check=True)
+    return new_model
 
 
 def feature_type_to_onnx_type(feature_type: FeatureType, arr: bool = False) -> TensorType:
@@ -84,6 +79,8 @@ def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
     for name_, t, cols in column_transformer.transformers_:
         if isinstance(t, ColumnNormalizer):
             sub_transformers.append(_to_onnx(t.column_transformer, name_))
+        elif name_ == "remainder":
+            continue
         else:
             transformers.append((name_, t, cols))
     ct_out = ColumnTransformer(transformers, remainder="drop")
@@ -94,8 +91,9 @@ def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
         name=name if name is not None else "base",
         initial_types=get_onnx_types(ct_out),
         naming=name + "_" if name is not None else "",
-        target_opset=18,
+        target_opset=17,
     )
+    # onnx.checker.check_model(model_onnx, full_check=True)
     # rename output
     assert len(model_onnx.graph.output) == 1
     output_node_name = model_onnx.graph.output[0].name
@@ -106,8 +104,7 @@ def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
             if node.output[i] == output_node_name:
                 node.output[i] = renamed_node_name
     # merge subgraphs
-    for sub in sub_transformers:
-        model_onnx = merge_models(model_onnx, sub, [])
+    model_onnx = reduce(partial(merge_models, io_map=[]), sub_transformers, model_onnx)
     return model_onnx
 
 
@@ -120,6 +117,7 @@ def add_metadata(model_onnx: onnx.ModelProto, key: str, value: str):
 
 def add_default_metadata(model_onnx: onnx.ModelProto):
     config = load_config()
+    model_onnx.doc_string = config.get("model_info", {}).get("doc_string", "")
     enabled_feature_types = config["data_sources"]["feature_store"]["enabled_feature_types"]
     if FeatureType.ARRAY in enabled_feature_types:
         feature_meta = config["data_sources"]["feature_store"].get("feature_meta", {})
@@ -134,4 +132,5 @@ def add_default_metadata(model_onnx: onnx.ModelProto):
 def to_onnx(column_transformer: ColumnTransformer):
     model_onnx = _to_onnx(column_transformer)
     add_default_metadata(model_onnx)
+    # onnx.checker.check_model(model_onnx, full_check=True)
     return model_onnx

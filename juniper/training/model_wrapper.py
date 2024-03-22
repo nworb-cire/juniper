@@ -1,4 +1,5 @@
 import io
+import logging
 import time
 from typing import Type, Callable
 
@@ -77,9 +78,11 @@ class Model:
                         test_loss += self._loss(batch_x, batch_y)
                         test_n += batch_x.shape[0]
                 avg_test_loss = test_loss / test_n
-                print(f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}, test loss {avg_test_loss:.4f}")
+                logging.info(
+                    f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}, test loss {avg_test_loss:.4f}"
+                )
             else:
-                print(f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}")
+                logging.info(f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}")
         return avg_test_loss
 
     def save(self, path: str):
@@ -102,6 +105,7 @@ class Model:
             )
             f.seek(0)
             model = onnx.load(f)
+            # onnx.checker.check_model(model, full_check=True)
         merged = merge_models(
             self.preprocessor_onnx, model, [(node.name.replace(".", "_"), node.name) for node in model.graph.input]
         )
