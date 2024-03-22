@@ -1,6 +1,10 @@
+import importlib
+
 import numpy as np
 import pandas as pd
 import torch
+
+from juniper.common.setup import load_config
 
 
 def to_human_readable_number(x: int) -> str:
@@ -26,7 +30,7 @@ def onnx_name_to_pd_name(name: str) -> str | None:
     if name == "output":
         return None
     assert name.endswith("_arr")
-    name = name[:-7]
+    name = name[:-4]
     return f"{name}__{name}"
 
 
@@ -53,3 +57,11 @@ def batches(x: pd.DataFrame, y: pd.DataFrame, batch_size: int):
         batch_y = y.iloc[i : i + batch_size].loc[~na_idx]
         batch_x = x.iloc[i : i + batch_size].loc[~na_idx]
         yield batch_x, batch_y
+
+
+def get_model_class():
+    config = load_config()
+    model_module = importlib.import_module(config["model"]["module"])
+    model_class = getattr(model_module, config["model"]["class"])
+    importlib.import_module(config["model"]["module"])
+    return model_class

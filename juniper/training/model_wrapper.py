@@ -1,18 +1,23 @@
+import io
 import time
 from typing import Type, Callable
 
-import onnxruntime as ort
+import onnx
 import pandas as pd
 import torch
+from sklearn.compose import ColumnTransformer
 
+from juniper.common.export import merge_models, to_onnx, add_default_metadata
 from juniper.training.utils import _to_tensor, batches
 
 
 class Model:
-    def __init__(self, model_cls: Type, loss_fn: Callable, preprocessor_path: str):
-        assert preprocessor_path.endswith(".onnx"), "Only ONNX preprocessors are supported"
-        preprocessor = ort.InferenceSession(preprocessor_path)
-        self.model_inputs = {node.name: node.shape[1] for node in preprocessor.get_outputs()}
+    def __init__(self, model_cls: Type, loss_fn: Callable, preprocessor: ColumnTransformer):
+        self.preprocessor = preprocessor
+        self.preprocessor_onnx = to_onnx(self.preprocessor)
+        self.model_inputs = {
+            node.name: node.type.tensor_type.shape.dim[1].dim_value for node in self.preprocessor_onnx.graph.output
+        }
         self.model_cls = model_cls
         self.loss_fn = loss_fn
 
@@ -52,7 +57,8 @@ class Model:
                 y_train.shape[1] == y_test.shape[1]
             ), f"y_train and y_test must have the same number of columns, got {y_train.shape[1]} and {y_test.shape[1]}"
 
-        self.model = self.model_cls(self.model_inputs, y_train.shape[1])
+        self.model_outputs = y_train.columns
+        self.model = self.model_cls(inputs=self.model_inputs, outputs=self.model_outputs)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
 
         avg_test_loss = None
@@ -85,11 +91,19 @@ class Model:
                 if name != "features"
             }
         )
-        torch.onnx.export(
-            self.model,
-            args=(dummy_input, {}),
-            f=path,
-            input_names=list(dummy_input.keys()),
-            output_names=["output"],
-            dynamic_axes={k: [2] for k, v in self.model_inputs.items() if k != "features"},
+        with io.BytesIO() as f:
+            torch.onnx.export(
+                self.model,
+                args=(dummy_input, {}),
+                f=f,
+                input_names=list(dummy_input.keys()),
+                output_names=["output"],
+                dynamic_axes={k: {2: "seq"} for k, v in self.model_inputs.items() if k != "features"},
+            )
+            f.seek(0)
+            model = onnx.load(f)
+        merged = merge_models(
+            self.preprocessor_onnx, model, [(node.name.replace(".", "_"), node.name) for node in model.graph.input]
         )
+        add_default_metadata(merged)
+        onnx.save_model(merged, path)

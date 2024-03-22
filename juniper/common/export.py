@@ -32,14 +32,15 @@ def set_opset(model: onnx.ModelProto, version: int, domain: str = None):
         opset.domain = domain
 
 
-def merge_models(m1: onnx.ModelProto, m2: onnx.ModelProto, io_mapping: list[tuple[str, str]]) -> onnx.ModelProto:
+def merge_models(m1: onnx.ModelProto, m2: onnx.ModelProto, io_map: list[tuple[str, str]]) -> onnx.ModelProto:
     common_opset = get_common_opset(m1, m2)
     clear_opset(m1)
     clear_opset(m2)
     for opset in common_opset:
         set_opset(m1, opset["version"], opset["domain"])
         set_opset(m2, opset["version"], opset["domain"])
-    return onnx.compose.merge_models(m1, m2, io_mapping)
+    graph = onnx.compose.merge_graphs(m1.graph, m2.graph, io_map)
+    return onnx.helper.make_model(graph)
 
 
 def feature_type_to_onnx_type(feature_type: FeatureType, arr: bool = False) -> TensorType:

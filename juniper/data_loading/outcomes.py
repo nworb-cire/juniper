@@ -102,7 +102,7 @@ class StandardOutcomes(BaseOutcomes, ABC):
         train = df.reindex(train_idx)
         train = self.filter_training_outcomes(train, train_time_end).drop(columns=[self.timestamp_column])
         if test_idx is not None:
-            test = df.reindex(test_idx)
+            test = df.reindex(test_idx).drop(columns=[self.timestamp_column])
         else:
             test = None
         return train, test
