@@ -77,9 +77,12 @@ class PivotedOutcomes(BaseOutcomes, S3DataSource):
 
 class StandardOutcomes(BaseOutcomes, ABC):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         config = load_config()
         self.binary_outcomes_list = tuple(config["data_sources"]["outcomes"]["binary_outcomes_list"])
+        super().__init__(*args, **kwargs)
+
+    def _get_columns(self, df: pd.DataFrame) -> list[str]:
+        return [c for c in df.columns if c.startswith(self.binary_outcomes_list) and re.match(r"\w+_\d{1,4}$", c)]
 
     def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: datetime):
         _offsets = set(c.split("_")[-1] for c in df.columns if c.startswith(self.binary_outcomes_list))
@@ -97,8 +100,7 @@ class StandardOutcomes(BaseOutcomes, ABC):
         df = self.read_parquet(
             filters=[(self.index_column, "in", train_idx.union(test_idx).tolist())],
         )
-        columns = [c for c in df.columns if c.startswith(self.binary_outcomes_list) and re.match(r"\w+_\d{1,4}$", c)]
-        df = df[columns + [self.timestamp_column]]
+        df = df[self._get_columns(df) + [self.timestamp_column]]
         df = df.sort_values(self.timestamp_column)
         df = df[~df.index.duplicated(keep="last")]
         train = df.reindex(train_idx)
@@ -110,7 +112,10 @@ class StandardOutcomes(BaseOutcomes, ABC):
         return train, test
 
     def get_metadata(self) -> pd.Series:
-        df = self.read_parquet(columns=[self.timestamp_column, self.index_column])
+        df = self.read_parquet()
+        columns = self._get_columns(df)
+        df = df[columns + [self.timestamp_column]]
+        df = df.dropna(subset=columns, how="all")
         df = df[self.timestamp_column]
         df = df.dropna()
         # df = df.sort_values()
