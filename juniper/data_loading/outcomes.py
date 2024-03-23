@@ -85,14 +85,15 @@ class StandardOutcomes(BaseOutcomes, ABC):
         return [c for c in df.columns if c.startswith(self.binary_outcomes_list) and re.match(r"\w+_\d{1,4}$", c)]
 
     def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: datetime):
-        _offsets = set(c.split("_")[-1] for c in df.columns if c.startswith(self.binary_outcomes_list))
+        all_cols = self._get_columns(df)
+        _offsets = set(c.split("_")[-1] for c in all_cols)
         for offset in _offsets:
             offset = int(offset)
             cols = [c for c in df.columns if c.endswith(f"_{offset}")]
             delta_holdout_date = train_time_end - pd.Timedelta(days=offset)
             for col in cols:
                 df[col] = df[col].mask(df[self.timestamp_column].dt.date >= delta_holdout_date, None)
-        return df
+        return df.dropna(how="all", subset=all_cols)
 
     def _load_train_test(
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None

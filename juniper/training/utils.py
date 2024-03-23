@@ -51,11 +51,9 @@ def _to_tensor(model, x: pd.DataFrame) -> dict[str, torch.Tensor]:
 
 def batches(x: pd.DataFrame, y: pd.DataFrame, batch_size: int):
     for i in range(0, x.shape[0], batch_size):
-        na_idx = y.iloc[i : i + batch_size].isna().all(axis=1)
-        if na_idx.all():
-            continue
-        batch_y = y.iloc[i : i + batch_size].loc[~na_idx]
-        batch_x = x.iloc[i : i + batch_size].loc[~na_idx]
+        batch_y = y.iloc[i : i + batch_size]
+        batch_x = x.iloc[i : i + batch_size]
+        print(f"Batch {i // batch_size + 1}/{x.shape[0] // batch_size + 1} size: {batch_x.shape[0]}")
         yield batch_x, batch_y
 
 

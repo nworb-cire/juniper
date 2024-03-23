@@ -20,8 +20,11 @@ if __name__ == "__main__":
 
     cv_split = TimeSeriesSplit(pd.Timedelta(days=30), n_splits=1)
     for train_idx, test_idx, train_time_end in cv_split.split(outcomes):
+        # TODO: Move this to a separate function
         train, test = feature_store.load_train_test(train_idx, test_idx)
         y_train, y_test = outcomes.load_train_test(train.index, test.index, train_time_end)
+        train = train.reindex(y_train.index)
+        test = test.reindex(y_test.index)
 
         t = time.monotonic()
         preprocessor = get_preprocessor(feature_store=feature_store)
