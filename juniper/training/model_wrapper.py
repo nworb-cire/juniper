@@ -9,6 +9,7 @@ import torch
 from sklearn.compose import ColumnTransformer
 
 from juniper.common.export import merge_models, to_onnx, add_default_metadata
+from juniper.training.metrics import evaluate_model, EvalMetrics
 from juniper.training.utils import _to_tensor, batches
 
 
@@ -42,7 +43,7 @@ class Model:
         y_test: pd.DataFrame = None,
         epochs: int = 100,
         batch_size: int = 1024,
-    ) -> float | None:
+    ) -> list[EvalMetrics]:
         assert (
             x_train.shape[0] == y_train.shape[0]
         ), f"x_train and y_train must have the same number of rows, got {x_train.shape[0]} and {y_train.shape[0]}"
@@ -62,7 +63,7 @@ class Model:
         self.model = self.model_cls(inputs=self.model_inputs, outputs=self.model_outputs)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
 
-        avg_test_loss = None
+        metrics = []
         for epoch in range(1, epochs + 1):
             train_loss, train_n = 0.0, 0
             t0 = time.monotonic()
@@ -72,18 +73,11 @@ class Model:
             avg_train_loss = train_loss / train_n
             t1 = time.monotonic()
             if x_test is not None and y_test is not None:
-                test_loss, test_n = 0.0, 0
                 with torch.no_grad():
-                    for batch_x, batch_y in batches(x_test, y_test, batch_size):
-                        test_loss += self._loss(batch_x, batch_y)
-                        test_n += batch_x.shape[0]
-                avg_test_loss = test_loss / test_n
-                logging.info(
-                    f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}, test loss {avg_test_loss:.4f}"
-                )
-            else:
-                logging.info(f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}")
-        return avg_test_loss
+                    metrics_ = evaluate_model(self.model, x_test, y_test, epoch)
+                metrics.append(metrics_)
+            logging.info(f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}")
+        return metrics
 
     def save(self, path: str):
         dummy_input = {"features": torch.zeros((1, self.model_inputs["features"]), dtype=torch.float32)}
@@ -100,7 +94,7 @@ class Model:
                 args=(dummy_input, {}),
                 f=f,
                 input_names=list(dummy_input.keys()),
-                output_names=["output"],
+                output_names=list(self.model_outputs),
                 dynamic_axes={k: {2: "seq"} for k, v in self.model_inputs.items() if k != "features"},
             )
             f.seek(0)

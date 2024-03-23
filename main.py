@@ -41,6 +41,5 @@ if __name__ == "__main__":
             loss_fn=MaskedBCEWithLogitsLoss(),
             preprocessor=preprocessor,
         )
-        score = model.fit(x_train, y_train, x_test, y_test, epochs=1, batch_size=1024)
-        logging.info(f"Score for {train_time_end}: {score}")
+        metrics = model.fit(x_train, y_train, x_test, y_test, epochs=25, batch_size=1024)
         model.save(f"models/model_{train_time_end}.onnx")

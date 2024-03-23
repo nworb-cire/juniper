@@ -1,4 +1,5 @@
 import importlib
+import logging
 
 import numpy as np
 import pandas as pd
@@ -53,7 +54,7 @@ def batches(x: pd.DataFrame, y: pd.DataFrame, batch_size: int):
     for i in range(0, x.shape[0], batch_size):
         batch_y = y.iloc[i : i + batch_size]
         batch_x = x.iloc[i : i + batch_size]
-        print(f"Batch {i // batch_size + 1}/{x.shape[0] // batch_size + 1} size: {batch_x.shape[0]}")
+        logging.debug(f"Batch {i // batch_size + 1}/{x.shape[0] // batch_size + 1} size: {batch_x.shape[0]}")
         yield batch_x, batch_y
 
 
