@@ -40,7 +40,8 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         for field in schema_out:
             if (
                 not field.name.startswith((self.record_prefix, *[f"{self.meta_prefix}{m}" for m in meta or []]))
-                or field.metadata.get(b"usable_type", b"").decode() == FeatureType.UNUSABLE
+                or field.metadata.get(b"usable_type", b"").decode()
+                not in config["data_sources"]["feature_store"]["enabled_feature_types"]
                 or field.name.startswith(override_unusable_features)
             ):
                 logging.debug(f"Removing field {field.name}")
