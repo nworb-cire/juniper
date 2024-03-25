@@ -1,3 +1,4 @@
+import abc
 import io
 import logging
 import time
@@ -14,7 +15,21 @@ from juniper.training.metrics import evaluate_model, EvalMetrics
 from juniper.training.utils import _to_tensor, batches
 
 
-class Model:
+class Model(abc.ABC):
+    @abc.abstractmethod
+    def __init__(self, inputs: dict[str, list[str]], outputs: list[str]):
+        """
+        :param inputs: Inverse mapping of preprocessor outputs to preprocessor inputs
+        :param outputs: List of output column names
+        """
+        pass
+
+    @abc.abstractmethod
+    def forward(self, x: dict[str, torch.Tensor]) -> torch.Tensor | dict[str, torch.Tensor]:
+        pass
+
+
+class ModelWrapper:
     def __init__(self, model_cls: Type, loss_fn: Callable, preprocessor: ColumnTransformer):
         self.preprocessor = preprocessor
         self.preprocessor_onnx = to_onnx(self.preprocessor)
@@ -99,9 +114,11 @@ class Model:
             f.seek(0)
             model = onnx.load(f)
             # onnx.checker.check_model(model, full_check=True)
-        merged = merge_models(
-            self.preprocessor_onnx, model, [(node.name.replace(".", "_"), node.name) for node in model.graph.input]
-        )
+        io_map = [
+            (node.name.replace(".", "_") + "_arr", node.name) for node in model.graph.input if node.name != "features"
+        ]
+        io_map += [("features", "features")]
+        merged = merge_models(self.preprocessor_onnx, model, io_map=io_map)
         add_default_metadata(merged)
         add_metrics(merged, metrics)
         onnx.save_model(merged, path)

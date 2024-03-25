@@ -8,7 +8,7 @@ from juniper.data_loading.feature_store import LocalParquetFeatureStore
 from juniper.data_loading.outcomes import LocalStandardOutcomes
 from juniper.preprocessor.preprocessor import get_preprocessor
 from juniper.training.losses import MaskedBCEWithLogitsLoss
-from juniper.training.model_wrapper import Model
+from juniper.training.model_wrapper import ModelWrapper
 from juniper.validation.time_series_split import TimeSeriesSplit
 from juniper.training.utils import get_model_class
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         x_test.columns = [c.replace(".", "_") for c in x_test.columns]
         logging.info(f"Validation data preprocessed in {time.monotonic() - t:.2f} seconds")
 
-        model = Model(
+        model = ModelWrapper(
             model_cls=get_model_class(),
             loss_fn=MaskedBCEWithLogitsLoss(),
             preprocessor=preprocessor,
