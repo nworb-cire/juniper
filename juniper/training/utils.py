@@ -50,11 +50,16 @@ def _to_tensor(model, x: pd.DataFrame) -> dict[str, torch.Tensor]:
     return {"features": x, **x_arr}
 
 
-def batches(x: pd.DataFrame, y: pd.DataFrame, batch_size: int):
-    for i in range(0, x.shape[0], batch_size):
-        batch_y = y.iloc[i : i + batch_size]
-        batch_x = x.iloc[i : i + batch_size]
-        logging.debug(f"Batch {i // batch_size + 1}/{x.shape[0] // batch_size + 1} size: {batch_x.shape[0]}")
+def batches(x: pd.DataFrame, y: pd.DataFrame, batch_size: int, shuffle: bool = True):
+    if shuffle:
+        idx = np.random.permutation(x.shape[0])
+    else:
+        idx = np.arange(x.shape[0])
+    for i in range(0, len(idx), batch_size):
+        idx_ = idx[i : i + batch_size]
+        batch_y = y.iloc[idx_]
+        batch_x = x.iloc[idx_]
+        logging.debug(f"Batch {i // batch_size + 1}/{len(idx) // batch_size + 1} size: {len(idx_)}")
         yield batch_x, batch_y
 
 
