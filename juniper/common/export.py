@@ -1,3 +1,4 @@
+import dataclasses
 import json
 from datetime import datetime
 from functools import reduce, partial
@@ -10,6 +11,7 @@ from sklearn.compose import ColumnTransformer
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
+from juniper.training.metrics import EvalMetrics
 
 
 def set_opset(model: onnx.ModelProto, opset: list[onnx.OperatorSetIdProto]) -> onnx.ModelProto:
@@ -134,3 +136,11 @@ def to_onnx(column_transformer: ColumnTransformer):
     add_default_metadata(model_onnx)
     # onnx.checker.check_model(model_onnx, full_check=True)
     return model_onnx
+
+
+def add_metrics(model_onnx: onnx.ModelProto, metrics: list[EvalMetrics]):
+    data = json.dumps([dataclasses.asdict(m) for m in metrics])
+    message_proto = onnx.StringStringEntryProto()
+    message_proto.key = "metrics"
+    message_proto.value = data
+    model_onnx.metadata_props.append(message_proto)

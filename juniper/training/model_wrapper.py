@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from sklearn.compose import ColumnTransformer
 
-from juniper.common.export import merge_models, to_onnx, add_default_metadata
+from juniper.common.export import merge_models, to_onnx, add_default_metadata, add_metrics
 from juniper.training.metrics import evaluate_model, EvalMetrics
 from juniper.training.utils import _to_tensor, batches
 
@@ -79,7 +79,7 @@ class Model:
             logging.info(f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}")
         return metrics
 
-    def save(self, path: str):
+    def save(self, path: str, metrics: list[EvalMetrics]):
         dummy_input = {"features": torch.zeros((1, self.model_inputs["features"]), dtype=torch.float32)}
         dummy_input.update(
             {
@@ -104,4 +104,5 @@ class Model:
             self.preprocessor_onnx, model, [(node.name.replace(".", "_"), node.name) for node in model.graph.input]
         )
         add_default_metadata(merged)
+        add_metrics(merged, metrics)
         onnx.save_model(merged, path)

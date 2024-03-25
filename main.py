@@ -18,7 +18,7 @@ if __name__ == "__main__":
     feature_store = LocalParquetFeatureStore()
     outcomes = LocalStandardOutcomes()
 
-    cv_split = TimeSeriesSplit(pd.Timedelta(days=30), n_splits=1)
+    cv_split = TimeSeriesSplit(pd.Timedelta(days=30), n_splits=3)
     for train_idx, test_idx, train_time_end in cv_split.split(outcomes):
         # TODO: Move this to a separate function
         train, test = feature_store.load_train_test(train_idx, test_idx)
@@ -41,5 +41,5 @@ if __name__ == "__main__":
             loss_fn=MaskedBCEWithLogitsLoss(),
             preprocessor=preprocessor,
         )
-        metrics = model.fit(x_train, y_train, x_test, y_test, epochs=25, batch_size=1024)
-        model.save(f"models/model_{train_time_end}.onnx")
+        metrics = model.fit(x_train, y_train, x_test, y_test, epochs=15, batch_size=1024)
+        model.save(path=f"models/model_{train_time_end}.onnx", metrics=metrics)
