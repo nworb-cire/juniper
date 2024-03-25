@@ -26,9 +26,7 @@ class BaseOutcomes(BaseDataSource, ABC):
             start = self.min_timestamp()
         if end is None:
             end = self.max_timestamp()
-        start = start.floor("D")
-        end = end.floor("D")
-        return self.metadata[(self.metadata >= start) & (self.metadata < end)].index.unique()
+        return self.metadata[(self.metadata >= start) & (self.metadata <= end)].index.unique()
 
     def min_timestamp(self) -> pd.Timestamp:
         return self.metadata.min()

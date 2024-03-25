@@ -32,7 +32,7 @@ class TimeSeriesSplit:
         if end_ts is None:
             end_ts = outcomes.max_timestamp()
         for i in range(self.n_splits):
-            holdout_time_end = end_ts - (self.n_splits - i) * self.timedelta
+            holdout_time_end = end_ts - (self.n_splits - i - 1) * self.timedelta
             holdout_time_begin = holdout_time_end - pd.Timedelta(days=self.holdout_time)
             train_time_end = holdout_time_begin - pd.Timedelta(days=self.gap)
             train_idx = outcomes.index_range(None, train_time_end)
