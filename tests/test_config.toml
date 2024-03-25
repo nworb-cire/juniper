@@ -6,7 +6,7 @@ index_column = "id"
 
 [data_sources.feature_store]
 location = "tests/data/feature_store.parquet"
-timestamp_column = ""
+timestamp_column = "date"
 enabled_feature_types = [
     "numeric",
     "categorical",
@@ -17,4 +17,5 @@ enabled_feature_types = [
 
 [data_sources.outcomes]
 location = "tests/data/outcomes.parquet"
-timestamp_column = ""
+timestamp_column = "date"
+binary_outcomes_list = ["outcome"]

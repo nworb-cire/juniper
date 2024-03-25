@@ -16,6 +16,8 @@ class TimeSeriesSplit:
         holdout_time: int = 150,
         include_last: bool = False,
     ):
+        if n_splits <= 0:
+            raise ValueError("n_splits must be a positive integer")
         self.timedelta = timedelta
         self.n_splits = n_splits
         self.gap = gap_days
@@ -28,7 +30,7 @@ class TimeSeriesSplit:
         self, outcomes: BaseOutcomes, end_ts: datetime = None
     ) -> Generator[tuple[pd.Index, pd.Index, datetime], None, None]:
         if end_ts is None:
-            end_ts = outcomes.max_timestamp().date()
+            end_ts = outcomes.max_timestamp()
         for i in range(self.n_splits):
             holdout_time_end = end_ts - (self.n_splits - i) * self.timedelta
             holdout_time_begin = holdout_time_end - pd.Timedelta(days=self.holdout_time)

@@ -2,10 +2,9 @@ import logging
 import re
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime, date
+from datetime import datetime
 
 import pandas as pd
-import pytz
 from s3path import S3Path
 
 from juniper.common.setup import load_config
@@ -22,19 +21,19 @@ class BaseOutcomes(BaseDataSource, ABC):
         self.timestamp_column = config["data_sources"]["outcomes"]["timestamp_column"]
         super().__init__(path=path)
 
-    def index_range(self, start: date | None, end: date | None) -> pd.Index:
+    def index_range(self, start: pd.Timestamp | None, end: pd.Timestamp | None) -> pd.Index:
         if start is None:
-            start = self.min_timestamp().date()
+            start = self.min_timestamp()
         if end is None:
-            end = self.max_timestamp().date()
-        start = datetime(start.year, start.month, start.day, tzinfo=pytz.UTC)
-        end = datetime(end.year, end.month, end.day, tzinfo=pytz.UTC)
+            end = self.max_timestamp()
+        start = start.floor("D")
+        end = end.floor("D")
         return self.metadata[(self.metadata >= start) & (self.metadata < end)].index.unique()
 
-    def min_timestamp(self) -> datetime:
+    def min_timestamp(self) -> pd.Timestamp:
         return self.metadata.min()
 
-    def max_timestamp(self) -> datetime:
+    def max_timestamp(self) -> pd.Timestamp:
         return self.metadata.max()
 
     @abstractmethod
