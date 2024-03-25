@@ -1,6 +1,8 @@
 import json
+from collections import defaultdict
 
 import pyarrow as pa
+from sklearn.compose import ColumnTransformer
 
 from juniper.common.data_type import FeatureType
 
@@ -40,3 +42,21 @@ def get_field_schema(field: pa.lib.Field) -> pa.Schema:
         metadata = None
     fields = _get_flattened_fields(field.type, field.name, metadata=metadata)
     return pa.schema(fields)
+
+
+def get_input_mapping(preprocessor: ColumnTransformer) -> dict[str, list[str]]:
+    """
+    :param preprocessor: Fitted ColumnTransformer
+    :return: Inverse mapping of preprocessor outputs to preprocessor inputs
+    """
+    ret = defaultdict(list)
+    for name, slice_ in preprocessor.output_indices_.items():
+        if name == "remainder":
+            continue
+        elif name in [FeatureType.NUMERIC, FeatureType.CATEGORICAL, FeatureType.BOOLEAN, FeatureType.TIMESTAMP]:
+            ret["features"] += list(preprocessor.feature_names_in_[slice_])
+        else:  # Array features
+            assert name in preprocessor.named_transformers_
+            # assert isinstance(preprocessor.named_transformers_[name], ColumnNormalizer)
+            ret[name.replace(".", "_")] = list(preprocessor.named_transformers_[name].schema_out.names)
+    return dict(ret)

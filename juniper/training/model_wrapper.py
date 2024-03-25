@@ -9,6 +9,7 @@ import torch
 from sklearn.compose import ColumnTransformer
 
 from juniper.common.export import merge_models, to_onnx, add_default_metadata, add_metrics
+from juniper.common.schema_tools import get_input_mapping
 from juniper.training.metrics import evaluate_model, EvalMetrics
 from juniper.training.utils import _to_tensor, batches
 
@@ -17,9 +18,7 @@ class Model:
     def __init__(self, model_cls: Type, loss_fn: Callable, preprocessor: ColumnTransformer):
         self.preprocessor = preprocessor
         self.preprocessor_onnx = to_onnx(self.preprocessor)
-        self.model_inputs = {
-            node.name: node.type.tensor_type.shape.dim[1].dim_value for node in self.preprocessor_onnx.graph.output
-        }
+        self.preprocessor_inputs = get_input_mapping(self.preprocessor)
         self.model_cls = model_cls
         self.loss_fn = loss_fn
 
@@ -60,7 +59,7 @@ class Model:
             ), f"y_train and y_test must have the same number of columns, got {y_train.shape[1]} and {y_test.shape[1]}"
 
         self.model_outputs = y_train.columns
-        self.model = self.model_cls(inputs=self.model_inputs, outputs=self.model_outputs)
+        self.model = self.model_cls(inputs=self.preprocessor_inputs, outputs=self.model_outputs)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
 
         metrics = []
@@ -80,11 +79,11 @@ class Model:
         return metrics
 
     def save(self, path: str, metrics: list[EvalMetrics]):
-        dummy_input = {"features": torch.zeros((1, self.model_inputs["features"]), dtype=torch.float32)}
+        dummy_input = {"features": torch.zeros((1, len(self.preprocessor_inputs["features"])), dtype=torch.float32)}
         dummy_input.update(
             {
-                name.replace(".", "_"): torch.zeros((1, size, 1), dtype=torch.float32)
-                for name, size in self.model_inputs.items()
+                name.replace(".", "_"): torch.zeros((1, len(cols), 1), dtype=torch.float32)
+                for name, cols in self.preprocessor_inputs.items()
                 if name != "features"
             }
         )
@@ -95,7 +94,7 @@ class Model:
                 f=f,
                 input_names=list(dummy_input.keys()),
                 output_names=list(self.model_outputs),
-                dynamic_axes={k: {2: "seq"} for k, v in self.model_inputs.items() if k != "features"},
+                dynamic_axes={k: {2: "seq"} for k in self.preprocessor_inputs.keys() if k != "features"},
             )
             f.seek(0)
             model = onnx.load(f)
