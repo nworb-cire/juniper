@@ -36,7 +36,7 @@ def merge_models(m1: onnx.ModelProto, m2: onnx.ModelProto, io_map: list[tuple[st
         doc_string=load_config().get("model_info", {}).get("doc_string", ""),
     )
     set_opset(new_model, opset)
-    # onnx.checker.check_model(new_model, full_check=True)
+    onnx.checker.check_model(new_model, full_check=True)
     return new_model
 
 
@@ -95,7 +95,7 @@ def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
         naming=name + "_" if name is not None else "",
         target_opset=17,
     )
-    # onnx.checker.check_model(model_onnx, full_check=True)
+    onnx.checker.check_model(model_onnx, full_check=True)
     # rename output
     assert len(model_onnx.graph.output) == 1
     output_node_name = model_onnx.graph.output[0].name
@@ -134,7 +134,7 @@ def add_default_metadata(model_onnx: onnx.ModelProto):
 def to_onnx(column_transformer: ColumnTransformer):
     model_onnx = _to_onnx(column_transformer)
     add_default_metadata(model_onnx)
-    # onnx.checker.check_model(model_onnx, full_check=True)
+    onnx.checker.check_model(model_onnx, full_check=True)
     return model_onnx
 
 
