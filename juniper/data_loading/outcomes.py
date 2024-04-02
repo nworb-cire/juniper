@@ -2,7 +2,6 @@ import logging
 import re
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime
 
 import pandas as pd
 from s3path import S3Path
@@ -35,16 +34,16 @@ class BaseOutcomes(BaseDataSource, ABC):
         return self.metadata.max()
 
     @abstractmethod
-    def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: datetime):
+    def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: pd.Timestamp):
         raise NotImplementedError
 
 
 class PivotedOutcomes(BaseOutcomes, S3DataSource):
-    def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: datetime):
+    def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: pd.Timestamp):
         df = df.filter(lambda row: row[self.timestamp_column] < train_time_end)
         return df
 
-    def load(self, idx, train_time_end: datetime | None = None):
+    def load(self, idx, train_time_end: pd.Timestamp | None = None):
         logging.info(f"Loading outcomes from {self._path_str}")
         t = time.monotonic()
         df = self.read_parquet()
@@ -67,7 +66,7 @@ class PivotedOutcomes(BaseOutcomes, S3DataSource):
         return df
 
     def _load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
+        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         raise NotImplementedError
 
@@ -81,7 +80,7 @@ class StandardOutcomes(BaseOutcomes, ABC):
     def _get_columns(self, df: pd.DataFrame) -> list[str]:
         return [c for c in df.columns if c.startswith(self.binary_outcomes_list) and re.match(r"\w+_\d{1,4}$", c)]
 
-    def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: datetime):
+    def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: pd.Timestamp):
         all_cols = self._get_columns(df)
         _offsets = set(c.split("_")[-1] for c in all_cols)
         for offset in _offsets:
@@ -89,11 +88,11 @@ class StandardOutcomes(BaseOutcomes, ABC):
             cols = [c for c in df.columns if c.endswith(f"_{offset}")]
             delta_holdout_date = train_time_end - pd.Timedelta(days=offset)
             for col in cols:
-                df[col] = df[col].mask(df[self.timestamp_column].dt.date >= delta_holdout_date, None)
+                df[col] = df[col].mask(df[self.timestamp_column] >= delta_holdout_date, None)
         return df.dropna(how="all", subset=all_cols)
 
     def _load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
+        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         df = self.read_parquet(
             filters=[(self.index_column, "in", train_idx.union(test_idx).tolist())],

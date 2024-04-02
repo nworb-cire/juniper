@@ -1,7 +1,6 @@
 import logging
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -40,12 +39,12 @@ class BaseDataSource(ABC):
 
     @abstractmethod
     def _load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
+        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         pass
 
     def load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
+        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         logging.info(f"Loading {self.__class__.__name__} from {self._path_str}")
         t = time.monotonic()

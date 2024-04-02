@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -25,7 +24,7 @@ class BaseFeatureStore(BaseDataSource, ABC):
         self.metadata = self.get_feature_metadata(self.schema)
 
     def _load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: datetime = None
+        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         train = self.read_parquet(
             filters=[(self.index_column, "in", train_idx.tolist())],

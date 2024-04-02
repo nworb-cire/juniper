@@ -18,7 +18,7 @@ if __name__ == "__main__":
     feature_store = LocalParquetFeatureStore()
     outcomes = LocalStandardOutcomes()
 
-    cv_split = TimeSeriesSplit(pd.Timedelta(days=30), n_splits=3)
+    cv_split = TimeSeriesSplit(pd.Timedelta(days=30), n_splits=1)
     for train_idx, test_idx, train_time_end in cv_split.split(outcomes):
         # TODO: Move this to a separate function
         train, test = feature_store.load_train_test(train_idx, test_idx)

@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Generator
-from datetime import datetime
 
 import pandas as pd
 
@@ -27,8 +26,8 @@ class TimeSeriesSplit:
             raise NotImplementedError
 
     def split(
-        self, outcomes: BaseOutcomes, end_ts: datetime = None
-    ) -> Generator[tuple[pd.Index, pd.Index, datetime], None, None]:
+        self, outcomes: BaseOutcomes, end_ts: pd.Timestamp = None
+    ) -> Generator[tuple[pd.Index, pd.Index, pd.Timestamp], None, None]:
         if end_ts is None:
             end_ts = outcomes.max_timestamp()
         for i in range(self.n_splits):
