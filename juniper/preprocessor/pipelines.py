@@ -13,16 +13,17 @@ def get_default_numeric_pipeline(columns: list[str]) -> Pipeline:
             ("typecast", CastTransformer()),
             ("imputer", ConstantImputer(add_indicator=False)),  # FIXME: indicator not exporting
             ("scaler", RobustScaler(quantile_range=(1.0, 99.0))),
+            ("typecast2", CastTransformer()),
         ]
     )
 
 
 def get_default_categorical_pipeline(columns: list[str]) -> Pipeline:
-    # TODO: Handle "not before seen" categories in deployment
     return Pipeline(
         steps=[
             ("encoder", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)),
             ("imputer", ConstantImputer(fill_value=-1)),
+            ("typecast", CastTransformer()),
         ]
     )
 
