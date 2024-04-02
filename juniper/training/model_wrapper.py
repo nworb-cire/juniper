@@ -122,3 +122,4 @@ class ModelWrapper:
         add_default_metadata(merged)
         add_metrics(merged, metrics)
         onnx.save_model(merged, path)
+        logging.info(f"Model saved to {path}")
