@@ -42,4 +42,4 @@ if __name__ == "__main__":
             preprocessor=preprocessor,
         )
         metrics = model.fit(x_train, y_train, x_test, y_test, epochs=15, batch_size=1024)
-        model.save(path=f"models/model_{train_time_end}.onnx", metrics=metrics)
+        model.save(path=f"models/model_{train_time_end.date()}.onnx", metrics=metrics)
