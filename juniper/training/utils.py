@@ -61,7 +61,7 @@ def batches(x: pd.DataFrame, y: pd.DataFrame, batch_size: int, shuffle: bool = T
 
 def get_model_class():
     config = load_config()
-    model_module = importlib.import_module(config["model"]["module"])
-    model_class = getattr(model_module, config["model"]["class"])
-    importlib.import_module(config["model"]["module"])
+    model_module = importlib.import_module(config["model"]["code"]["module"])
+    model_class = getattr(model_module, config["model"]["code"]["class"])
+    importlib.import_module(config["model"]["code"]["module"])
     return model_class

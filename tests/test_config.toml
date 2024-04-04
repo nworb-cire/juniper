@@ -1,4 +1,4 @@
-[model_info]
+[model.metadata]
 doc_string = "Model produced during unit testing"
 
 [data_sources]

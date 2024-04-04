@@ -33,7 +33,6 @@ def merge_models(m1: onnx.ModelProto, m2: onnx.ModelProto, io_map: list[tuple[st
         m2=m2,
         io_map=io_map,
         producer_name="juniper",
-        doc_string=load_config().get("model_info", {}).get("doc_string", ""),
     )
     set_opset(new_model, opset)
     onnx.checker.check_model(new_model, full_check=True)
@@ -119,16 +118,16 @@ def add_metadata(model_onnx: onnx.ModelProto, key: str, value: str):
 
 def add_default_metadata(model_onnx: onnx.ModelProto):
     config = load_config()
-    model_onnx.doc_string = config.get("model_info", {}).get("doc_string", "")
     enabled_feature_types = config["data_sources"]["feature_store"]["enabled_feature_types"]
     if FeatureType.ARRAY in enabled_feature_types:
         feature_meta = config["data_sources"]["feature_store"].get("feature_meta", {})
         add_metadata(model_onnx, "feature_meta", json.dumps(feature_meta))
     add_metadata(model_onnx, "creation_date", str(datetime.utcnow()))
-    for k, v in config.get("model_info", {}).items():
+    for k, v in config["model"].get("metadata", {}).items():
         if k == "doc_string":
-            continue
-        add_metadata(model_onnx, k, v)
+            model_onnx.doc_string = v
+        else:
+            add_metadata(model_onnx, k, v)
 
 
 def to_onnx(column_transformer: ColumnTransformer):

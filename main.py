@@ -3,7 +3,7 @@ import time
 
 import pandas as pd
 
-from juniper.common.setup import init_services
+from juniper.common.setup import init_services, load_config
 from juniper.data_loading.feature_store import LocalParquetFeatureStore
 from juniper.data_loading.outcomes import LocalStandardOutcomes
 from juniper.preprocessor.preprocessor import get_preprocessor
@@ -18,7 +18,11 @@ if __name__ == "__main__":
     feature_store = LocalParquetFeatureStore()
     outcomes = LocalStandardOutcomes()
 
-    cv_split = TimeSeriesSplit(pd.Timedelta(days=30), n_splits=1)
+    config = load_config()
+    cv_split = TimeSeriesSplit(
+        pd.Timedelta(days=config["model"]["training"]["cv_split"]["days"]),
+        n_splits=config["model"]["training"]["cv_split"]["n_splits"],
+    )
     for train_idx, test_idx, train_time_end in cv_split.split(outcomes):
         # TODO: Move this to a separate function
         train, test = feature_store.load_train_test(train_idx, test_idx)
@@ -41,5 +45,12 @@ if __name__ == "__main__":
             loss_fn=MaskedBCEWithLogitsLoss(),
             preprocessor=preprocessor,
         )
-        metrics = model.fit(x_train, y_train, x_test, y_test, epochs=15, batch_size=1024)
+        metrics = model.fit(
+            x_train,
+            y_train,
+            x_test,
+            y_test,
+            epochs=config["model"]["hyperparameters"]["epochs"],
+            batch_size=config["model"]["hyperparameters"]["batch_size"],
+        )
         model.save(path=f"models/model_{train_time_end.date()}.onnx", metrics=metrics)
