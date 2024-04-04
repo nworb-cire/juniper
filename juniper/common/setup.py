@@ -44,4 +44,5 @@ def init_services():
     config = load_config()
 
     init_logging(config)
-    init_minio(config)
+    if "minio" in config:
+        init_minio(config)
