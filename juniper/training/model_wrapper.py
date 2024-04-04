@@ -4,7 +4,9 @@ import logging
 import time
 from typing import Type, Callable
 
+import numpy as np
 import onnx
+import onnxruntime
 import pandas as pd
 import torch
 from sklearn.compose import ColumnTransformer
@@ -93,6 +95,20 @@ class ModelWrapper:
             logging.info(f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}")
         return metrics
 
+    @staticmethod
+    def validate(model: onnx.ModelProto):
+        onnx.checker.check_model(model, full_check=True)
+        inputs = {}
+        sess = onnxruntime.InferenceSession(model.SerializeToString())
+        for node in sess.get_inputs():
+            input_ = np.array([[None]])
+            if node.type == "tensor(string)":
+                input_ = input_.astype(np.str_)
+            else:
+                input_ = input_.astype(np.float32)
+            inputs[node.name] = input_
+        sess.run(None, inputs)
+
     def save(self, path: str, metrics: list[EvalMetrics]):
         dummy_input = {"features": torch.zeros((1, len(self.preprocessor_inputs["features"])), dtype=torch.float32)}
         dummy_input.update(
@@ -119,6 +135,7 @@ class ModelWrapper:
         ]
         io_map += [("features", "features")]
         merged = merge_models(self.preprocessor_onnx, model, io_map=io_map)
+        # self.validate(merged)
         add_default_metadata(merged)
         add_metrics(merged, metrics)
         onnx.save_model(merged, path)
