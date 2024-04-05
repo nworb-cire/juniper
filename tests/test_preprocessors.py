@@ -165,12 +165,12 @@ def test_inference_all_null_values(feature_store):
     assert isinstance(Xt, pd.DataFrame)
     expected = pd.DataFrame(
         {
-            "numeric__num": [0.0],
-            # "numeric__missingindicator_num": [1.0],
-            "categorical__cat": [3.0],
-            "boolean__bool": [-1.0],
-            "timestamp__timestamp__ts": [-12419.6669921875],
-            "arr__arr": [np.array([[0.0], [0.0]])],
+            "num": [0.0],
+            # "missingindicator_num": [1.0],
+            "cat": [3.0],
+            "bool": [-1.0],
+            "timestamp__ts": [-12419.6669921875],
+            "arr": [np.array([[0.0], [0.0]])],
         },
         index=pd.Index([1], name="id"),
     )

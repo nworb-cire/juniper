@@ -18,8 +18,8 @@ def test_unify(feature_store, onnx_schema):
     column_transformer = get_preprocessor(feature_store, schema=onnx_schema)
     df = feature_store.read_parquet()
     x = column_transformer.fit_transform(df)
-    unify = Unify({"arr__arr": SummaryPool()})
+    unify = Unify({"arr": SummaryPool()})
     y = unify(x)
     assert isinstance(y, torch.Tensor)
     assert y.shape[0] == x.shape[0]
-    assert y.shape[1] == x.shape[1] - 1 + 4 * len(x["arr__arr"].iloc[0])
+    assert y.shape[1] == x.shape[1] - 1 + 4 * len(x["arr"].iloc[0])

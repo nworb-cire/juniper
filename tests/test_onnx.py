@@ -44,7 +44,7 @@ def test_runtime(feature_store, onnx_schema):
             input[node.name] = np.array([[None]], dtype=np.str_)
         else:
             input[node.name] = np.array([[None]], dtype=np.float32)
-    output = sess.run(["features", "arr__arr"], input)
+    output = sess.run(["features", "arr"], input)
     assert output is not None
     assert len(output) == 2
     expected = np.array([0.0, 3.0, -1.0])
@@ -67,8 +67,8 @@ class SimpleModel(torch.nn.Module, Model):
         self.linear = torch.nn.Linear(5, 1)
 
     def forward(self, x: pd.DataFrame):
-        arr = torch.tensor(list(map(lambda y: np.mean(y, axis=1), x["arr__arr"].values)), dtype=torch.float32)
-        x_ = torch.tensor(x.drop(columns=["arr__arr"]).values.T, dtype=torch.float32)
+        arr = torch.tensor(list(map(lambda y: np.mean(y, axis=1), x["arr"].values)), dtype=torch.float32)
+        x_ = torch.tensor(x.drop(columns=["arr"]).values.T, dtype=torch.float32)
         x_ = torch.cat([x_, arr], dim=0)
         return self.linear(x_)
 
