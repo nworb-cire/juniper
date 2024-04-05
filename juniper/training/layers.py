@@ -40,7 +40,6 @@ class Unify(nn.Module):
         self.padding_value = padding_value
 
     def forward(self, x: pd.DataFrame) -> torch.Tensor:
-        assert all(name in x.columns for name in self.modules.keys())
         ret = torch.Tensor()
         for col, module in self.modules.items():
             tensors = x[col].apply(torch.tensor).apply(lambda x: x.T)

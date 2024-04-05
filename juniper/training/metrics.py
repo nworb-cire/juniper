@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score, log_loss
 
-from juniper.training.utils import _to_tensor
-
 
 @dataclass(frozen=True, kw_only=True)
 class SingleOutcomeEvalMetrics:
@@ -20,9 +18,8 @@ class EvalMetrics:
 
 
 def evaluate_model(model, x: pd.DataFrame, y: pd.DataFrame, epoch):
-    x_ = _to_tensor(model, x)
     y_gt = y.to_dict(orient="list")
-    yhat = model.forward(x_)
+    yhat = model.forward(x)
     yhat = yhat.detach().numpy()
     yhat = {name: yhat[:, i] for i, name in enumerate(model.outputs)}
 

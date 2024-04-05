@@ -14,7 +14,7 @@ from sklearn.compose import ColumnTransformer
 from juniper.common.export import merge_models, to_onnx, add_default_metadata, add_metrics
 from juniper.common.schema_tools import get_input_mapping
 from juniper.training.metrics import evaluate_model, EvalMetrics
-from juniper.training.utils import _to_tensor, batches
+from juniper.training.utils import batches
 
 
 class Model(abc.ABC):
@@ -40,8 +40,7 @@ class ModelWrapper:
         self.loss_fn = loss_fn
 
     def _loss(self, x: pd.DataFrame, y: pd.DataFrame):
-        x_ = _to_tensor(self.model, x)
-        yhat = self.model.forward(x_)
+        yhat = self.model.forward(x)
         return self.loss_fn(yhat, torch.tensor(y.values, dtype=torch.float32))
 
     def partial_fit(self, x_train: pd.DataFrame, y_train: pd.DataFrame) -> float:
@@ -110,20 +109,14 @@ class ModelWrapper:
         sess.run(None, inputs)
 
     def save(self, path: str, metrics: list[EvalMetrics]):
-        dummy_input = {"features": torch.zeros((1, len(self.preprocessor_inputs["features"])), dtype=torch.float32)}
-        dummy_input.update(
-            {
-                name.replace(".", "_"): torch.zeros((1, len(cols), 1), dtype=torch.float32)
-                for name, cols in self.preprocessor_inputs.items()
-                if name != "features"
-            }
-        )
+        df = pd.DataFrame({feature: [None] for feature in self.preprocessor.feature_names_in_})
+        dummy_input = self.preprocessor.transform(df)
         with io.BytesIO() as f:
             torch.onnx.export(
                 self.model,
                 args=(dummy_input, {}),
                 f=f,
-                input_names=list(dummy_input.keys()),
+                input_names=dummy_input.columns.tolist(),
                 output_names=list(self.model_outputs),
                 dynamic_axes={k: {2: "seq"} for k in self.preprocessor_inputs.keys() if k != "features"},
             )
