@@ -4,6 +4,7 @@ import logging
 import time
 from typing import Type, Callable
 
+import numpy as np
 import onnx
 import pandas as pd
 import torch
@@ -94,7 +95,9 @@ class ModelWrapper:
 
     @staticmethod
     def validate(model: onnx.ModelProto):
-        raise NotImplementedError
+        out = dummy_inference(model)
+        for val in out.values():
+            assert not np.isnan(val).any(), "Model produced NaN values"
 
     def save(self, path: str, metrics: list[EvalMetrics]):
         dummy_input = dummy_inference(self.preprocessor_onnx)
@@ -116,7 +119,7 @@ class ModelWrapper:
             onnx.checker.check_model(model, full_check=True)
         io_map = [(node.name, node.name) for node in model.graph.input]
         merged = merge_models(self.preprocessor_onnx, model, io_map=io_map)
-        # self.validate(merged)
+        self.validate(merged)
         add_default_metadata(merged)
         add_metrics(merged, metrics)
         onnx.save_model(merged, path)

@@ -22,7 +22,7 @@ class SummaryPool(nn.Module):
             return torch.cat(
                 [
                     torch.mean(x, dim=-1),
-                    torch.std(x, dim=-1),
+                    torch.std(x, dim=-1, unbiased=False),
                     torch.max(x, dim=-1)[0],
                     torch.min(x, dim=-1)[0],
                 ],
