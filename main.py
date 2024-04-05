@@ -33,11 +33,9 @@ if __name__ == "__main__":
         t = time.monotonic()
         preprocessor = get_preprocessor(feature_store=feature_store)
         x_train = preprocessor.fit_transform(train)
-        x_train.columns = [c.replace(".", "_") for c in x_train.columns]
         logging.info(f"Preprocessor fitted in {time.monotonic() - t:.2f} seconds")
         t = time.monotonic()
         x_test = preprocessor.transform(test)
-        x_test.columns = [c.replace(".", "_") for c in x_test.columns]
         logging.info(f"Validation data preprocessed in {time.monotonic() - t:.2f} seconds")
 
         model = ModelWrapper(

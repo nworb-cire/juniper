@@ -58,5 +58,5 @@ def get_input_mapping(preprocessor: ColumnTransformer) -> dict[str, list[str]]:
         else:  # Array features
             assert name in preprocessor.named_transformers_
             # assert isinstance(preprocessor.named_transformers_[name], ColumnNormalizer)
-            ret[name.replace(".", "_")] = list(preprocessor.named_transformers_[name].schema_out.names)
+            ret[name] = list(preprocessor.named_transformers_[name].schema_out.names)
     return dict(ret)

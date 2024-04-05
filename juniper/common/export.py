@@ -73,8 +73,6 @@ def get_onnx_types(column_transformer: ColumnTransformer) -> list[tuple[str, Ten
 
 
 def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
-    if name is not None:
-        name = name.replace(".", "_")
     transformers = []
     sub_transformers = []
     for name_, t, cols in column_transformer.transformers_:
