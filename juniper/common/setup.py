@@ -1,3 +1,4 @@
+import functools
 import logging
 import os
 import tomllib
@@ -11,6 +12,7 @@ def project_root() -> Path:
     return Path(__file__).parent.parent.parent.absolute()
 
 
+@functools.lru_cache
 def load_config() -> dict:
     config_location = os.environ.get("CONFIG_LOCATION", "config.toml")
     config_file = project_root() / config_location
