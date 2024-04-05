@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import torch
 from torch import nn
@@ -7,7 +8,7 @@ from juniper.training import nan_ops
 
 class SummaryPool(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.training:
+        if self.training and x.shape[0] > 1:
             return torch.cat(
                 [
                     torch.nanmean(x, dim=-1),
@@ -33,13 +34,22 @@ class Unify(nn.Module):
     def __init__(
         self,
         modules: dict[str, nn.Module],
-        padding_value=0.0,
+        padding_value=np.nan,
     ):
         super().__init__()
         self.modules = modules
         self.padding_value = padding_value
 
-    def forward(self, x: pd.DataFrame) -> torch.Tensor:
+    def forward(self, x: pd.DataFrame | dict) -> torch.Tensor:
+        if isinstance(x, pd.DataFrame):
+            return self.forward_df(x)
+        elif isinstance(x, dict):
+            return self.forward_dict(x)
+        else:
+            raise ValueError(f"Unsupported input type {type(x)}")
+
+    # TODO: ensure order is always the same
+    def forward_df(self, x: pd.DataFrame) -> torch.Tensor:
         ret = torch.Tensor()
         for col, module in self.modules.items():
             tensors = x[col].apply(torch.tensor).apply(lambda x: x.T)
@@ -55,4 +65,15 @@ class Unify(nn.Module):
             ret = torch.cat([ret, y], dim=-1)
             x = x.drop(columns=[col])
         ret = torch.cat([ret, torch.tensor(x.values, dtype=torch.float32)], dim=-1)
+        return ret
+
+    def forward_dict(self, x: dict[str, torch.Tensor]) -> torch.Tensor:
+        """This method should only be used during ONNX export"""
+        ret = torch.Tensor()
+        for col, module in self.modules.items():
+            y = x[col]  # VxS
+            y = y.unsqueeze(0)  # 1xVxS
+            y = module(y)
+            ret = torch.cat([ret, y], dim=-1)
+        ret = torch.cat([ret, x["features"]], dim=-1)
         return ret

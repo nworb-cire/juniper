@@ -110,23 +110,28 @@ class ModelWrapper:
 
     def save(self, path: str, metrics: list[EvalMetrics]):
         df = pd.DataFrame({feature: [None] for feature in self.preprocessor.feature_names_in_})
-        dummy_input = self.preprocessor.transform(df)
+        dft = self.preprocessor.transform(df)
+        dict_ = dft.to_dict(orient="records")[0]
+        array_features = [k for k, v in dict_.items() if isinstance(v, list)]
+        dummy_input = {k.replace(".", "_"): torch.tensor(v) for k, v in dict_.items() if k in array_features}
+        dummy_input["features"] = torch.tensor(dft.drop(columns=array_features).values)
+        self.model.eval()
         with io.BytesIO() as f:
             torch.onnx.export(
                 self.model,
-                args=(dummy_input, {}),
+                args=(
+                    dummy_input,
+                    {},
+                ),  # empty dict for kwargs, see docstring
                 f=f,
-                input_names=dummy_input.columns.tolist(),
+                input_names=list(dummy_input.keys()),
                 output_names=list(self.model_outputs),
-                dynamic_axes={k: {2: "seq"} for k in self.preprocessor_inputs.keys() if k != "features"},
+                dynamic_axes={k: {1: "seq"} for k in dummy_input.keys() if k != "features"},
             )
             f.seek(0)
             model = onnx.load(f)
-            # onnx.checker.check_model(model, full_check=True)
-        io_map = [
-            (node.name.replace(".", "_") + "_arr", node.name) for node in model.graph.input if node.name != "features"
-        ]
-        io_map += [("features", "features")]
+            onnx.checker.check_model(model, full_check=True)
+        io_map = [(node.name, node.name) for node in model.graph.input]
         merged = merge_models(self.preprocessor_onnx, model, io_map=io_map)
         # self.validate(merged)
         add_default_metadata(merged)

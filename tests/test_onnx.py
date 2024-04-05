@@ -44,7 +44,7 @@ def test_runtime(feature_store, onnx_schema):
             input[node.name] = np.array([[None]], dtype=np.str_)
         else:
             input[node.name] = np.array([[None]], dtype=np.float32)
-    output = sess.run(["features", "arr_arr"], input)
+    output = sess.run(["features", "arr__arr"], input)
     assert output is not None
     assert len(output) == 2
     expected = np.array([0.0, 3.0, -1.0])
