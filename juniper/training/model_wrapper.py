@@ -4,9 +4,7 @@ import logging
 import time
 from typing import Type, Callable
 
-import numpy as np
 import onnx
-import onnxruntime
 import pandas as pd
 import torch
 from sklearn.compose import ColumnTransformer
@@ -14,7 +12,7 @@ from sklearn.compose import ColumnTransformer
 from juniper.common.export import merge_models, to_onnx, add_default_metadata, add_metrics
 from juniper.common.schema_tools import get_input_mapping
 from juniper.training.metrics import evaluate_model, EvalMetrics
-from juniper.training.utils import batches
+from juniper.training.utils import batches, dummy_inference
 
 
 class Model(abc.ABC):
@@ -96,26 +94,11 @@ class ModelWrapper:
 
     @staticmethod
     def validate(model: onnx.ModelProto):
-        onnx.checker.check_model(model, full_check=True)
-        inputs = {}
-        sess = onnxruntime.InferenceSession(model.SerializeToString())
-        for node in sess.get_inputs():
-            input_ = np.array([[None]])
-            if node.type == "tensor(string)":
-                input_ = input_.astype(np.str_)
-            else:
-                input_ = input_.astype(np.float32)
-            inputs[node.name] = input_
-        sess.run(None, inputs)
+        raise NotImplementedError
 
     def save(self, path: str, metrics: list[EvalMetrics]):
-        df = pd.DataFrame({feature: [None] for feature in self.preprocessor.feature_names_in_})
-        dft = self.preprocessor.transform(df)
-        dict_ = dft.to_dict(orient="records")[0]
-        array_features = [k for k, v in dict_.items() if isinstance(v, list)]
-        dummy_input = {k.replace(".", "_"): torch.tensor(v) for k, v in dict_.items() if k in array_features}
-        dummy_input["features"] = torch.tensor(dft.drop(columns=array_features).values)
-        self.model.eval()
+        dummy_input = dummy_inference(self.preprocessor_onnx)
+        dummy_input = {k: torch.tensor(v) for k, v in dummy_input.items()}
         with io.BytesIO() as f:
             torch.onnx.export(
                 self.model,
