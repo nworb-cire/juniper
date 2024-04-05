@@ -63,15 +63,16 @@ class Unify(nn.Module):
                 y = torch.nested.nested_tensor(tensors.values.tolist())  # BxVxS
             y = module(y)  # BxV
             ret = torch.cat([ret, y], dim=-1)
-            x = x.drop(columns=[col])
-        ret = torch.cat([ret, torch.tensor(x.values, dtype=torch.float32)], dim=-1)
+        ret = torch.cat(
+            [ret, torch.tensor(x.drop(columns=list(self.modules.keys())).values, dtype=torch.float32)], dim=-1
+        )
         return ret
 
     def forward_dict(self, x: dict[str, torch.Tensor]) -> torch.Tensor:
         """This method should only be used during ONNX export"""
         ret = torch.Tensor()
         for col, module in self.modules.items():
-            y = x[col]  # VxS
+            y = x[col].T  # VxS
             y = y.unsqueeze(0)  # 1xVxS
             y = module(y)
             ret = torch.cat([ret, y], dim=-1)
