@@ -70,11 +70,6 @@ class Unify(nn.Module):
 
     def forward_dict(self, x: dict[str, torch.Tensor]) -> torch.Tensor:
         """This method should only be used during ONNX export"""
-        ret = torch.Tensor()
-        for col, module in self.modules.items():
-            y = x[col].T  # VxS
-            y = y.unsqueeze(0)  # 1xVxS
-            y = module(y)
-            ret = torch.cat([ret, y], dim=-1)
-        ret = torch.cat([ret, x["features"]], dim=-1)
-        return ret
+        return torch.cat(
+            [module(x[col].T.unsqueeze(0)) for col, module in self.modules.items()] + [x["features"]], dim=-1
+        )
