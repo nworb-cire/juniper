@@ -39,6 +39,8 @@ class Unify(nn.Module):
         super().__init__()
         self.modules = modules
         self.padding_value = padding_value
+        for name, module in self.modules.items():
+            self.add_module(name.replace(".", "_"), module)
 
     def forward(self, x: pd.DataFrame | dict) -> torch.Tensor:
         if isinstance(x, pd.DataFrame):
