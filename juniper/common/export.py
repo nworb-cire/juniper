@@ -140,6 +140,7 @@ def add_default_metadata(model_onnx: onnx.ModelProto):
     for k, v in config["model"].get("metadata", {}).items():
         if k == "doc_string":
             model_onnx.doc_string = v
+            model_onnx.graph.doc_string = v
         else:
             add_metadata(model_onnx, k, v)
     add_metadata(model_onnx, "hyperparameters", json.dumps(config["model"]["hyperparameters"]))
