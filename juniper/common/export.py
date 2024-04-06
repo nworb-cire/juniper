@@ -142,6 +142,7 @@ def add_default_metadata(model_onnx: onnx.ModelProto):
             model_onnx.doc_string = v
         else:
             add_metadata(model_onnx, k, v)
+    add_metadata(model_onnx, "hyperparameters", json.dumps(config["model"]["hyperparameters"]))
 
 
 def to_onnx(column_transformer: ColumnTransformer):
