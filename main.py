@@ -48,8 +48,7 @@ if __name__ == "__main__":
             y_train,
             x_test,
             y_test,
-            epochs=config["model"]["hyperparameters"]["epochs"],
-            batch_size=config["model"]["hyperparameters"]["batch_size"],
+            config["model"]["hyperparameters"],
         )
         logging.info(f"Training metrics: {metrics[-1]}")
         model.save(path=f"models/model_{train_time_end.date()}.onnx", metrics=metrics)

@@ -56,8 +56,7 @@ class ModelWrapper:
         y_train: pd.DataFrame,
         x_test: pd.DataFrame = None,
         y_test: pd.DataFrame = None,
-        epochs: int = 100,
-        batch_size: int = 1024,
+        hyperparameters: dict = {},
     ) -> list[EvalMetrics]:
         assert (
             x_train.shape[0] == y_train.shape[0]
@@ -75,21 +74,27 @@ class ModelWrapper:
             ), f"y_train and y_test must have the same number of columns, got {y_train.shape[1]} and {y_test.shape[1]}"
 
         self.model_outputs = y_train.columns.tolist()
-        self.model = self.model_cls(inputs=self.preprocessor_inputs, outputs=self.model_outputs)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
+        self.model = self.model_cls(
+            inputs=self.preprocessor_inputs, outputs=self.model_outputs, hyperparameters=hyperparameters
+        )
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=hyperparameters["learning_rate"])
 
         metrics = []
-        for epoch in range(1, epochs + 1):
+        for epoch in range(1, hyperparameters["epochs"] + 1):
             train_loss, train_n = 0.0, 0
             t0 = time.monotonic()
-            for batch_x, batch_y in batches(x_train, y_train, batch_size):
+            for batch_x, batch_y in batches(x_train, y_train, hyperparameters["batch_size"]):
+                tb = time.monotonic()
                 train_loss += self.partial_fit(batch_x, batch_y)
                 train_n += batch_x.shape[0]
+                logging.debug(f"Batch time: {time.monotonic() - tb:.2f}s")
             avg_train_loss = train_loss / train_n
             t1 = time.monotonic()
             if x_test is not None and y_test is not None:
+                tb = time.monotonic()
                 with torch.no_grad():
                     metrics_ = evaluate_model(self.model, x_test, y_test, epoch)
+                logging.debug(f"Validation time: {time.monotonic() - tb:.2f}s")
                 metrics.append(metrics_)
             logging.info(f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}")
         return metrics
