@@ -19,7 +19,7 @@ from juniper.training.utils import batches, dummy_inference, camel_case_to_snake
 
 class Model(abc.ABC):
     @abc.abstractmethod
-    def __init__(self, inputs: dict[str, list[str]], outputs: list[str]):
+    def __init__(self, inputs: dict[str, list[str]], outputs: list[str], hyperparameters: dict):
         """
         :param inputs: Inverse mapping of preprocessor outputs to preprocessor inputs
         :param outputs: List of output column names
@@ -56,7 +56,7 @@ class ModelWrapper:
         y_train: pd.DataFrame,
         x_test: pd.DataFrame = None,
         y_test: pd.DataFrame = None,
-        hyperparameters: dict = {},
+        hyperparameters: dict = None,
     ) -> list[EvalMetrics]:
         assert (
             x_train.shape[0] == y_train.shape[0]

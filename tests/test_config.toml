@@ -1,6 +1,9 @@
 [model.metadata]
 doc_string = "Model produced during unit testing"
 
+[model.hyperparameters]
+hyperparameter = "value"
+
 [data_sources]
 index_column = "id"
 
