@@ -1,5 +1,6 @@
 import dataclasses
 import json
+from collections import defaultdict
 from datetime import datetime
 from functools import reduce, partial
 
@@ -14,6 +15,14 @@ from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.training.metrics import EvalMetrics
 
 
+def get_common_opset(m1: onnx.ModelProto, m2: onnx.ModelProto) -> list[onnx.OperatorSetIdProto]:
+    opset = defaultdict(int)
+    for m in (m1, m2):
+        for op in m.opset_import:
+            opset[op.domain] = max(opset[op.domain], op.version)
+    return [onnx.helper.make_opsetid(domain, version) for domain, version in opset.items()]
+
+
 def set_opset(model: onnx.ModelProto, opset: list[onnx.OperatorSetIdProto]) -> onnx.ModelProto:
     while len(model.opset_import) > 0:
         model.opset_import.pop()
@@ -22,10 +31,7 @@ def set_opset(model: onnx.ModelProto, opset: list[onnx.OperatorSetIdProto]) -> o
 
 
 def merge_models(m1: onnx.ModelProto, m2: onnx.ModelProto, io_map: list[tuple[str, str]]) -> onnx.ModelProto:
-    opset = [
-        onnx.helper.make_opsetid("", 17),
-        onnx.helper.make_opsetid("ai.onnx.ml", 2),
-    ]
+    opset = get_common_opset(m1, m2)
     set_opset(m1, opset)
     set_opset(m2, opset)
     new_model = onnx.compose.merge_models(
