@@ -1,5 +1,4 @@
 import abc
-import io
 import logging
 import time
 from typing import Type, Callable
@@ -13,7 +12,7 @@ from sklearn.compose import ColumnTransformer
 from juniper.common.export import merge_models, to_onnx, add_default_metadata, add_metrics
 from juniper.common.schema_tools import get_input_mapping
 from juniper.training.metrics import evaluate_model, EvalMetrics
-from juniper.training.utils import batches, dummy_inference
+from juniper.training.utils import batches, dummy_inference, camel_case_to_snake_case
 
 
 class Model(abc.ABC):
@@ -102,22 +101,14 @@ class ModelWrapper:
     def save(self, path: str, metrics: list[EvalMetrics]):
         dummy_input = dummy_inference(self.preprocessor_onnx)
         dummy_input = {k: torch.tensor(v) for k, v in dummy_input.items()}
-        with io.BytesIO() as f:
-            torch.onnx.export(
-                self.model,
-                args=(
-                    dummy_input,
-                    {},
-                ),  # empty dict for kwargs, see docstring
-                f=f,
-                input_names=list(dummy_input.keys()),
-                output_names=list(self.model_outputs),
-                dynamic_axes={k: {1: "seq"} for k in dummy_input.keys() if k != "features"},
-            )
-            f.seek(0)
-            model = onnx.load(f)
-            onnx.checker.check_model(model, full_check=True)
-        io_map = [(node.name, node.name) for node in model.graph.input]
+        model = torch.onnx.dynamo_export(
+            self.model,
+            dummy_input,
+            export_options=torch.onnx.ExportOptions(dynamic_shapes=True),
+        ).model_proto
+        onnx.checker.check_model(model, full_check=True)
+        onnx.save_model(model, "model.onnx")
+        io_map = [(k, f"l_x_{camel_case_to_snake_case(k.replace('.', '_'))}_") for k in dummy_input.keys()]
         merged = merge_models(self.preprocessor_onnx, model, io_map=io_map)
         self.validate(merged)
         add_default_metadata(merged)
