@@ -1,4 +1,5 @@
 import abc
+import io
 import logging
 import time
 from typing import Type, Callable
@@ -11,6 +12,7 @@ from sklearn.compose import ColumnTransformer
 
 from juniper.common.export import merge_models, to_onnx, add_default_metadata, add_metrics
 from juniper.common.schema_tools import get_input_mapping
+from juniper.training.layers import DictOutput
 from juniper.training.metrics import evaluate_model, EvalMetrics
 from juniper.training.utils import batches, dummy_inference, camel_case_to_snake_case
 
@@ -72,7 +74,7 @@ class ModelWrapper:
                 y_train.shape[1] == y_test.shape[1]
             ), f"y_train and y_test must have the same number of columns, got {y_train.shape[1]} and {y_test.shape[1]}"
 
-        self.model_outputs = y_train.columns
+        self.model_outputs = y_train.columns.tolist()
         self.model = self.model_cls(inputs=self.preprocessor_inputs, outputs=self.model_outputs)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
 
@@ -107,9 +109,21 @@ class ModelWrapper:
             export_options=torch.onnx.ExportOptions(dynamic_shapes=True),
         ).model_proto
         onnx.checker.check_model(model, full_check=True)
-        onnx.save_model(model, "model.onnx")
         io_map = [(k, f"l_x_{camel_case_to_snake_case(k.replace('.', '_'))}_") for k in dummy_input.keys()]
         merged = merge_models(self.preprocessor_onnx, model, io_map=io_map)
+
+        output = DictOutput(self.model_outputs)
+        with io.BytesIO() as f:
+            dummy_input = list(dummy_inference(merged).values())[0]
+            dummy_input = torch.tensor(dummy_input)
+            torch.onnx.export(output, args=(dummy_input,), f=f, output_names=self.model_outputs)
+            f.seek(0)
+            output_onnx = onnx.load(f)
+        assert len(merged.graph.output) == 1
+        assert len(output_onnx.graph.input) == 1
+        io_map = [(merged.graph.output[0].name, output_onnx.graph.input[0].name)]
+        merged = merge_models(merged, output_onnx, io_map=io_map)
+
         self.validate(merged)
         add_default_metadata(merged)
         add_metrics(merged, metrics)
