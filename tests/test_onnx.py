@@ -7,7 +7,7 @@ from onnxruntime import InferenceSession
 
 from juniper.common.data_type import FeatureType
 from juniper.common.export import to_onnx
-from juniper.preprocessor.preprocessor import get_preprocessor
+from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.training.model_wrapper import TorchModel, Model
 
 
@@ -19,7 +19,7 @@ def onnx_schema(feature_store):
 
 
 def test_onnx_export(feature_store, onnx_schema):
-    column_transformer = get_preprocessor(feature_store, schema=onnx_schema)
+    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 
@@ -30,7 +30,7 @@ def test_onnx_export(feature_store, onnx_schema):
 
 
 def test_runtime(feature_store, onnx_schema):
-    column_transformer = get_preprocessor(feature_store, schema=onnx_schema)
+    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 
@@ -74,7 +74,7 @@ class SimpleModel(torch.nn.Module, Model):
 
 
 def test_simple_model(feature_store, onnx_schema):
-    column_transformer = get_preprocessor(feature_store, schema=onnx_schema)
+    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 

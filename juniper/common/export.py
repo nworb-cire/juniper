@@ -2,16 +2,13 @@ import dataclasses
 import json
 from collections import defaultdict
 from datetime import datetime
-from functools import reduce, partial
 
 import onnx
 from onnxconverter_common import FloatTensorType, StringTensorType, TensorType
-from skl2onnx import convert_sklearn
 from sklearn.compose import ColumnTransformer
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
-from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.training.metrics import EvalMetrics
 
 
@@ -78,51 +75,6 @@ def get_onnx_types(column_transformer: ColumnTransformer) -> list[tuple[str, Ten
     return initial_types
 
 
-def _to_onnx(column_transformer: ColumnTransformer, name: str | None = None):
-    transformers = []
-    sub_transformers = []
-    for name_, t, cols in column_transformer.transformers_:
-        if isinstance(t, ColumnNormalizer):
-            sub_transformers.append(_to_onnx(t.column_transformer, name_))
-        elif name_ == "remainder":
-            continue
-        else:
-            transformers.append((name_, t, cols))
-    ct_out = ColumnTransformer(transformers, remainder="drop")
-    ct_out.transformers_ = transformers
-
-    model_onnx = convert_sklearn(
-        model=ct_out,
-        name=name if name is not None else "base",
-        initial_types=get_onnx_types(ct_out),
-        naming=name + "_" if name is not None else "",
-        target_opset=17,
-    )
-    onnx.checker.check_model(model_onnx, full_check=True)
-    # rename input
-    for node in model_onnx.graph.input:
-        for feature_name in column_transformer.feature_names_in_:
-            if node.name == feature_name.replace(".", "_"):
-                node.name = feature_name
-    for node in model_onnx.graph.node:
-        for i in range(len(node.input)):
-            for feature_name in column_transformer.feature_names_in_:
-                if node.input[i] == feature_name.replace(".", "_"):
-                    node.input[i] = feature_name
-    # rename output
-    assert len(model_onnx.graph.output) == 1
-    output_node_name = model_onnx.graph.output[0].name
-    renamed_node_name = "features" if name is None else name
-    model_onnx.graph.output[0].name = renamed_node_name
-    for node in model_onnx.graph.node:
-        for i in range(len(node.output)):
-            if node.output[i] == output_node_name:
-                node.output[i] = renamed_node_name
-    # merge subgraphs
-    model_onnx = reduce(partial(merge_models, io_map=[]), sub_transformers, model_onnx)
-    return model_onnx
-
-
 def add_metadata(model_onnx: onnx.ModelProto, key: str, value: str):
     message_proto = onnx.StringStringEntryProto()
     message_proto.key = key
@@ -147,7 +99,7 @@ def add_default_metadata(model_onnx: onnx.ModelProto):
 
 
 def to_onnx(column_transformer: ColumnTransformer):
-    model_onnx = _to_onnx(column_transformer)
+    model_onnx = column_transformer.to_onnx()
     add_default_metadata(model_onnx)
     onnx.checker.check_model(model_onnx, full_check=True)
     return model_onnx

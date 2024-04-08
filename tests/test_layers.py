@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from juniper.common.data_type import FeatureType
-from juniper.preprocessor.preprocessor import get_preprocessor
+from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.training.layers import Unify, SummaryPool
 
 
@@ -15,7 +15,7 @@ def onnx_schema(feature_store):
 
 
 def test_unify(feature_store, onnx_schema):
-    column_transformer = get_preprocessor(feature_store, schema=onnx_schema)
+    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
     df = feature_store.read_parquet()
     x = column_transformer.fit_transform(df)
     unify = Unify({"arr": SummaryPool()})

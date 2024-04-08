@@ -13,7 +13,7 @@ class ModelComponent(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def to_onnx(self, metrics: list[EvalMetrics] | None) -> onnx.ModelProto:
+    def to_onnx(self, name: str | None = None, metrics: list[EvalMetrics] | None = None) -> onnx.ModelProto:
         pass
 
     @abc.abstractmethod

@@ -8,11 +8,11 @@ import numpy as np
 import onnx
 import pandas as pd
 import torch
-from sklearn.compose import ColumnTransformer
 
 from juniper.common.component import ModelComponent
-from juniper.common.export import merge_models, to_onnx, add_default_metadata, add_metrics
+from juniper.common.export import merge_models, add_default_metadata, add_metrics
 from juniper.common.schema_tools import get_input_mapping
+from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.training.layers import DictOutput
 from juniper.training.metrics import evaluate_model, EvalMetrics
 from juniper.training.utils import batches, dummy_inference, camel_case_to_snake_case
@@ -35,7 +35,7 @@ class Model(abc.ABC):
 class TorchModel(ModelComponent):
     def __init__(self, model_cls: Type, loss_fn: Callable, preprocessor: ColumnTransformer):
         self.preprocessor = preprocessor
-        self.preprocessor_onnx = to_onnx(self.preprocessor)
+        self.preprocessor_onnx = self.preprocessor.to_onnx()
         self.preprocessor_inputs = get_input_mapping(self.preprocessor)
         self.model_cls = model_cls
         self.loss_fn = loss_fn
@@ -105,7 +105,7 @@ class TorchModel(ModelComponent):
         for val in out.values():
             assert not np.isnan(val).any(), "Model produced NaN values"
 
-    def to_onnx(self, metrics: list[EvalMetrics] | None) -> onnx.ModelProto:
+    def to_onnx(self, name: str | None = None, metrics: list[EvalMetrics] | None = None) -> onnx.ModelProto:
         dummy_input = dummy_inference(self.preprocessor_onnx)
         dummy_input = {k: torch.tensor(v) for k, v in dummy_input.items()}
         model = torch.onnx.dynamo_export(
