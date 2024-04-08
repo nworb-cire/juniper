@@ -8,7 +8,7 @@ from onnxruntime import InferenceSession
 from juniper.common.data_type import FeatureType
 from juniper.common.export import to_onnx
 from juniper.preprocessor.preprocessor import get_preprocessor
-from juniper.training.model_wrapper import ModelWrapper, Model
+from juniper.training.model_wrapper import TorchModel, Model
 
 
 @pytest.fixture
@@ -73,19 +73,14 @@ class SimpleModel(torch.nn.Module, Model):
         return self.linear(x_)
 
 
-# Broken right now, FIXME
-@pytest.mark.skip
 def test_simple_model(feature_store, onnx_schema):
     column_transformer = get_preprocessor(feature_store, schema=onnx_schema)
     df = feature_store.read_parquet()
-    x = column_transformer.fit_transform(df)
+    column_transformer.fit(df)
 
-    model = SimpleModel()
-    model.forward(x)
-
-    wrapper = ModelWrapper(
+    model = TorchModel(
         model_cls=SimpleModel,
         loss_fn=lambda: None,
         preprocessor=column_transformer,
     )
-    wrapper.fit(pd.DataFrame(), pd.DataFrame(), epochs=0)
+    model.fit(pd.DataFrame(), pd.DataFrame(), hyperparameters={"epochs": 0, "learning_rate": 0})

@@ -10,6 +10,7 @@ import pandas as pd
 import torch
 from sklearn.compose import ColumnTransformer
 
+from juniper.common.component import ModelComponent
 from juniper.common.export import merge_models, to_onnx, add_default_metadata, add_metrics
 from juniper.common.schema_tools import get_input_mapping
 from juniper.training.layers import DictOutput
@@ -31,7 +32,7 @@ class Model(abc.ABC):
         pass
 
 
-class ModelWrapper:
+class TorchModel(ModelComponent):
     def __init__(self, model_cls: Type, loss_fn: Callable, preprocessor: ColumnTransformer):
         self.preprocessor = preprocessor
         self.preprocessor_onnx = to_onnx(self.preprocessor)
@@ -99,13 +100,12 @@ class ModelWrapper:
             logging.info(f"Epoch {epoch} ({t1-t0:.2f}s): train loss {avg_train_loss:.4f}")
         return metrics
 
-    @staticmethod
-    def validate(model: onnx.ModelProto):
+    def validate(self, model: onnx.ModelProto):
         out = dummy_inference(model)
         for val in out.values():
             assert not np.isnan(val).any(), "Model produced NaN values"
 
-    def save(self, path: str, metrics: list[EvalMetrics]):
+    def to_onnx(self, metrics: list[EvalMetrics] | None) -> onnx.ModelProto:
         dummy_input = dummy_inference(self.preprocessor_onnx)
         dummy_input = {k: torch.tensor(v) for k, v in dummy_input.items()}
         model = torch.onnx.dynamo_export(
@@ -132,5 +132,4 @@ class ModelWrapper:
         self.validate(merged)
         add_default_metadata(merged)
         add_metrics(merged, metrics)
-        onnx.save_model(merged, path)
-        logging.info(f"Model saved to {path}")
+        return merged

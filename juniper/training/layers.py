@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import torch
 from torch import nn
@@ -34,7 +33,7 @@ class Unify(nn.Module):
     def __init__(
         self,
         modules: dict[str, nn.Module],
-        padding_value=np.nan,
+        padding_value=0.0,
     ):
         super().__init__()
         self.modules = modules
