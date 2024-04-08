@@ -74,12 +74,3 @@ class Unify(nn.Module):
         return torch.cat(
             [module(x[col].T.unsqueeze(0)) for col, module in self.modules.items()] + [x["features"]], dim=-1
         )
-
-
-class DictOutput(nn.Module):
-    def __init__(self, outputs: list[str]):
-        super().__init__()
-        self.outputs = outputs
-
-    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
-        return {name: x[:, i] for i, name in enumerate(self.outputs)}

@@ -13,9 +13,8 @@ from juniper.common.component import ModelComponent
 from juniper.common.export import merge_models, add_default_metadata, add_metrics
 from juniper.common.schema_tools import get_input_mapping
 from juniper.preprocessor.preprocessor import ColumnTransformer
-from juniper.training.layers import DictOutput
 from juniper.training.metrics import evaluate_model, EvalMetrics
-from juniper.training.utils import batches, dummy_inference, camel_case_to_snake_case
+from juniper.training.utils import batches, dummy_inference
 
 
 class Model(abc.ABC):
@@ -108,28 +107,24 @@ class TorchModel(ModelComponent):
     def to_onnx(self, name: str | None = None, metrics: list[EvalMetrics] | None = None) -> onnx.ModelProto:
         dummy_input = dummy_inference(self.preprocessor_onnx)
         dummy_input = {k: torch.tensor(v) for k, v in dummy_input.items()}
-        model = torch.onnx.dynamo_export(
-            self.model,
-            dummy_input,
-            export_options=torch.onnx.ExportOptions(dynamic_shapes=True),
-        ).model_proto
-        onnx.checker.check_model(model, full_check=True)
-        io_map = [(k, f"l_x_{camel_case_to_snake_case(k.replace('.', '_'))}_") for k in dummy_input.keys()]
-        merged = merge_models(self.preprocessor_onnx, model, io_map=io_map)
 
-        output = DictOutput(self.model_outputs)
         with io.BytesIO() as f:
-            dummy_input = list(dummy_inference(merged).values())[0]
-            dummy_input = torch.tensor(dummy_input)
-            torch.onnx.export(output, args=(dummy_input,), f=f, output_names=self.model_outputs)
+            torch.onnx.export(
+                self.model,
+                args=(dummy_input, {}),  # Trailing empty dict is for kwargs, see docstring for this function
+                f=f,
+                input_names=list(dummy_input.keys()),
+                output_names=self.model_outputs,
+                dynamic_axes={k: {1: "sequence"} for k in dummy_input.keys() if k != "features"},
+            )
             f.seek(0)
-            output_onnx = onnx.load(f)
-        assert len(merged.graph.output) == 1
-        assert len(output_onnx.graph.input) == 1
-        io_map = [(merged.graph.output[0].name, output_onnx.graph.input[0].name)]
-        merged = merge_models(merged, output_onnx, io_map=io_map)
+            model = onnx.load(f)
+        io_map = [(k, k) for k in dummy_input.keys()]
+        merged = merge_models(self.preprocessor_onnx, model, io_map=io_map)
+        onnx.checker.check_model(model, full_check=True)
 
         self.validate(merged)
         add_default_metadata(merged)
-        add_metrics(merged, metrics)
+        if metrics is not None:
+            add_metrics(merged, metrics)
         return merged
