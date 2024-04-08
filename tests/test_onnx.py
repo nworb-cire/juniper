@@ -6,7 +6,6 @@ import torch.nn
 from onnxruntime import InferenceSession
 
 from juniper.common.data_type import FeatureType
-from juniper.common.export import to_onnx
 from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.training.model_wrapper import TorchModel, Model
 
@@ -23,7 +22,7 @@ def test_onnx_export(feature_store, onnx_schema):
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 
-    model_onnx = to_onnx(column_transformer)
+    model_onnx = column_transformer.to_onnx()
     assert model_onnx is not None
     with open("testcase.onnx", "wb") as f:
         f.write(model_onnx.SerializeToString())
@@ -34,7 +33,7 @@ def test_runtime(feature_store, onnx_schema):
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 
-    model_onnx = to_onnx(column_transformer)
+    model_onnx = column_transformer.to_onnx()
     sess = InferenceSession(model_onnx.SerializeToString())
     input = {}
     for node in sess.get_inputs():

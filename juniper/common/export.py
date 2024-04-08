@@ -4,8 +4,8 @@ from collections import defaultdict
 from datetime import datetime
 
 import onnx
+import sklearn.compose
 from onnxconverter_common import FloatTensorType, StringTensorType, TensorType
-from sklearn.compose import ColumnTransformer
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
@@ -59,7 +59,7 @@ def feature_type_to_onnx_type(feature_type: FeatureType, arr: bool = False) -> T
             raise ValueError(f"Unknown feature type {feature_type}")
 
 
-def get_onnx_types(column_transformer: ColumnTransformer) -> list[tuple[str, TensorType]]:
+def get_onnx_types(column_transformer: sklearn.compose.ColumnTransformer) -> list[tuple[str, TensorType]]:
     initial_types = []
     for name, _, columns in column_transformer.transformers:
         if name == "remainder":
@@ -96,13 +96,6 @@ def add_default_metadata(model_onnx: onnx.ModelProto):
         else:
             add_metadata(model_onnx, k, v)
     add_metadata(model_onnx, "hyperparameters", json.dumps(config["model"]["hyperparameters"]))
-
-
-def to_onnx(column_transformer: ColumnTransformer):
-    model_onnx = column_transformer.to_onnx()
-    add_default_metadata(model_onnx)
-    onnx.checker.check_model(model_onnx, full_check=True)
-    return model_onnx
 
 
 def add_metrics(model_onnx: onnx.ModelProto, metrics: list[EvalMetrics]):
