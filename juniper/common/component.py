@@ -20,6 +20,7 @@ class ModelComponent(abc.ABC):
     def validate(self, model: onnx.ModelProto):
         pass
 
-    def save(self, model: onnx.ModelProto, path: str):
-        self.validate(model)
-        onnx.save_model(model, path)
+    def save(self, path: str, metrics: list[EvalMetrics] | None = None):
+        model_onnx = self.to_onnx(metrics=metrics)
+        self.validate(model_onnx)
+        onnx.save_model(model_onnx, path)

@@ -6,9 +6,9 @@ import pandas as pd
 from juniper.common.setup import init_services, load_config
 from juniper.data_loading.feature_store import LocalParquetFeatureStore
 from juniper.data_loading.outcomes import LocalStandardOutcomes
-from juniper.preprocessor.preprocessor import get_preprocessor
+from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.training.losses import MaskedBCEWithLogitsLoss
-from juniper.training.model_wrapper import ModelWrapper
+from juniper.training.model_wrapper import TorchModel
 from juniper.validation.time_series_split import TimeSeriesSplit
 from juniper.training.utils import get_model_class
 
@@ -31,14 +31,14 @@ if __name__ == "__main__":
         test = test.reindex(y_test.index)
 
         t = time.monotonic()
-        preprocessor = get_preprocessor(feature_store=feature_store)
+        preprocessor = ColumnTransformer(feature_store=feature_store)
         x_train = preprocessor.fit_transform(train)
         logging.info(f"Preprocessor fitted in {time.monotonic() - t:.2f} seconds")
         t = time.monotonic()
         x_test = preprocessor.transform(test)
         logging.info(f"Validation data preprocessed in {time.monotonic() - t:.2f} seconds")
 
-        model = ModelWrapper(
+        model = TorchModel(
             model_cls=get_model_class(),
             loss_fn=MaskedBCEWithLogitsLoss(),
             preprocessor=preprocessor,
@@ -51,4 +51,5 @@ if __name__ == "__main__":
             config["model"]["hyperparameters"],
         )
         logging.info(f"Training metrics: {metrics[-1]}")
-        model.save(path=f"models/model_{train_time_end.date()}.onnx", metrics=metrics)
+        onnx = model.to_onnx(metrics=metrics)
+        model.save(path=f"models/model_{train_time_end.date()}.onnx")
