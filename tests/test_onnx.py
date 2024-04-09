@@ -1,4 +1,7 @@
+import tempfile
+
 import numpy as np
+import onnx
 import pandas as pd
 import pyarrow as pa
 import pytest
@@ -24,8 +27,12 @@ def test_onnx_export(feature_store, onnx_schema):
 
     model_onnx = column_transformer.to_onnx()
     assert model_onnx is not None
-    with open("testcase.onnx", "wb") as f:
-        f.write(model_onnx.SerializeToString())
+
+    with tempfile.NamedTemporaryFile() as temp:
+        temp.write(model_onnx.SerializeToString())
+        temp.flush()
+        model_onnx = onnx.load_model(temp.name)
+        assert model_onnx is not None
 
 
 def test_runtime(feature_store, onnx_schema):
