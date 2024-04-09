@@ -19,7 +19,7 @@ from juniper.preprocessor.pipelines import (
     get_default_boolean_pipeline,
     get_default_timestamp_pipeline,
 )
-from juniper.training.metrics import EvalMetrics
+from juniper.modeling.metrics import EvalMetrics
 
 
 class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):

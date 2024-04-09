@@ -2,7 +2,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from juniper.training import nan_ops
+from juniper.modeling import torch_nan_ops
 
 
 class SummaryPool(nn.Module):
@@ -11,9 +11,9 @@ class SummaryPool(nn.Module):
             return torch.cat(
                 [
                     torch.nanmean(x, dim=-1),
-                    nan_ops.nanstd(x, dim=-1),
-                    nan_ops.nanmax(x, dim=-1)[0],
-                    nan_ops.nanmin(x, dim=-1)[0],
+                    torch_nan_ops.nanstd(x, dim=-1),
+                    torch_nan_ops.nanmax(x, dim=-1)[0],
+                    torch_nan_ops.nanmin(x, dim=-1)[0],
                 ],
                 dim=-1,
             )

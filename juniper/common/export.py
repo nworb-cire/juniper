@@ -9,7 +9,7 @@ from onnxconverter_common import FloatTensorType, StringTensorType, TensorType
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
-from juniper.training.metrics import EvalMetrics
+from juniper.modeling.metrics import EvalMetrics
 
 
 def get_common_opset(m1: onnx.ModelProto, m2: onnx.ModelProto) -> list[onnx.OperatorSetIdProto]:

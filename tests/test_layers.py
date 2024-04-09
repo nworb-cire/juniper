@@ -4,7 +4,7 @@ import torch
 
 from juniper.common.data_type import FeatureType
 from juniper.preprocessor.preprocessor import ColumnTransformer
-from juniper.training.layers import Unify, SummaryPool
+from juniper.modeling.layers import Unify, SummaryPool
 
 
 @pytest.fixture

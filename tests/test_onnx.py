@@ -10,7 +10,8 @@ from onnxruntime import InferenceSession
 
 from juniper.common.data_type import FeatureType
 from juniper.preprocessor.preprocessor import ColumnTransformer
-from juniper.training.model_wrapper import TorchModel, Model
+from juniper.modeling.model_wrapper import Model
+from juniper.modeling.torch import TorchModel
 
 
 @pytest.fixture

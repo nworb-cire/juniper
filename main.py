@@ -7,10 +7,10 @@ from juniper.common.setup import init_services, load_config
 from juniper.data_loading.feature_store import LocalParquetFeatureStore
 from juniper.data_loading.outcomes import LocalStandardOutcomes
 from juniper.preprocessor.preprocessor import ColumnTransformer
-from juniper.training.losses import MaskedBCEWithLogitsLoss
-from juniper.training.model_wrapper import TorchModel
+from juniper.modeling.losses import MaskedBCEWithLogitsLoss
+from juniper.modeling.torch import TorchModel
 from juniper.validation.time_series_split import TimeSeriesSplit
-from juniper.training.utils import get_model_class
+from juniper.modeling.utils import get_model_class
 
 if __name__ == "__main__":
     init_services()
@@ -20,8 +20,8 @@ if __name__ == "__main__":
 
     config = load_config()
     cv_split = TimeSeriesSplit(
-        pd.Timedelta(days=config["model"]["training"]["cv_split"]["days"]),
-        n_splits=config["model"]["training"]["cv_split"]["n_splits"],
+        pd.Timedelta(days=config["model"]["modeling"]["cv_split"]["days"]),
+        n_splits=config["model"]["modeling"]["cv_split"]["n_splits"],
     )
     for train_idx, test_idx, train_time_end in cv_split.split(outcomes):
         # TODO: Move this to a separate function

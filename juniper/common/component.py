@@ -2,7 +2,7 @@ import abc
 
 import onnx
 
-from juniper.training.metrics import EvalMetrics
+from juniper.modeling.metrics import EvalMetrics
 
 
 class ModelComponent(abc.ABC):

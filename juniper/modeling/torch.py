@@ -1,4 +1,3 @@
-import abc
 import io
 import logging
 import time
@@ -13,22 +12,8 @@ from juniper.common.component import ModelComponent
 from juniper.common.export import merge_models, add_default_metadata, add_metrics
 from juniper.common.schema_tools import get_input_mapping
 from juniper.preprocessor.preprocessor import ColumnTransformer
-from juniper.training.metrics import evaluate_model, EvalMetrics
-from juniper.training.utils import batches, dummy_inference
-
-
-class Model(abc.ABC):
-    @abc.abstractmethod
-    def __init__(self, inputs: dict[str, list[str]], outputs: list[str], hyperparameters: dict):
-        """
-        :param inputs: Inverse mapping of preprocessor outputs to preprocessor inputs
-        :param outputs: List of output column names
-        """
-        pass
-
-    @abc.abstractmethod
-    def forward(self, x: dict[str, torch.Tensor]) -> torch.Tensor | dict[str, torch.Tensor]:
-        pass
+from juniper.modeling.metrics import EvalMetrics, evaluate_model
+from juniper.modeling.utils import batches, dummy_inference
 
 
 class TorchModel(ModelComponent):
