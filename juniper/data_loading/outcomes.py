@@ -7,7 +7,7 @@ import pandas as pd
 from s3path import S3Path
 
 from juniper.common.setup import load_config
-from juniper.data_loading.data_source import S3DataSource, BaseDataSource, LocalDataSource
+from juniper.data_loading.data_source import S3ParquetDataSource, BaseDataSource, LocalDataSource, ParquetDataSource
 
 
 class BaseOutcomes(BaseDataSource, ABC):
@@ -17,8 +17,9 @@ class BaseOutcomes(BaseDataSource, ABC):
         config = load_config()
         if path is None:
             path = config["data_sources"]["outcomes"]["location"]
+        self.path = path
         self.timestamp_column = config["data_sources"]["outcomes"]["timestamp_column"]
-        super().__init__(path=path)
+        super().__init__()
 
     def index_range(self, start: pd.Timestamp | None, end: pd.Timestamp | None) -> pd.Index:
         if start is None:
@@ -38,7 +39,7 @@ class BaseOutcomes(BaseDataSource, ABC):
         raise NotImplementedError
 
 
-class PivotedOutcomes(BaseOutcomes, S3DataSource):
+class PivotedOutcomes(BaseOutcomes, S3ParquetDataSource):
     def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: pd.Timestamp):
         df = df.filter(lambda row: row[self.timestamp_column] < train_time_end)
         return df
@@ -71,7 +72,7 @@ class PivotedOutcomes(BaseOutcomes, S3DataSource):
         raise NotImplementedError
 
 
-class StandardOutcomes(BaseOutcomes, ABC):
+class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
     def __init__(self, *args, **kwargs):
         config = load_config()
         self.binary_outcomes_list = tuple(config["data_sources"]["outcomes"]["binary_outcomes_list"])

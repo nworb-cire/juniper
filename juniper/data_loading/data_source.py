@@ -13,8 +13,7 @@ class BaseDataSource(ABC):
     index_column: str
     timestamp_column: str
 
-    def __init__(self, path: Path):
-        self.path = path
+    def __init__(self):
         config = load_config()
         self.index_column = config["data_sources"]["index_column"]
         self.get_metadata()
@@ -22,15 +21,6 @@ class BaseDataSource(ABC):
     @property
     @abstractmethod
     def _path_str(self) -> str:
-        pass
-
-    @abstractmethod
-    def read_parquet(
-        self,
-        path: Path = None,
-        columns: list[str] = None,
-        filters: list[tuple] | list[list[tuple]] | None = None,
-    ) -> pd.DataFrame:
         pass
 
     @abstractmethod
@@ -54,10 +44,17 @@ class BaseDataSource(ABC):
         return ret
 
 
-class LocalDataSource(BaseDataSource, ABC):
-    def __init__(self, path: Path):
-        super().__init__(path)
+class ParquetDataSource(BaseDataSource, ABC):
+    path: Path
 
+    @abstractmethod
+    def read_parquet(
+        self, path: Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
+    ) -> pd.DataFrame:
+        pass
+
+
+class LocalDataSource(ParquetDataSource, ABC):
     @property
     def _path_str(self) -> str:
         return str(self.path.absolute())
@@ -71,19 +68,15 @@ class LocalDataSource(BaseDataSource, ABC):
         return df.set_index(self.index_column)
 
 
-class S3DataSource(BaseDataSource, ABC):
-    def __init__(self, path: S3Path):
-        super().__init__(path)
+class S3ParquetDataSource(ParquetDataSource, ABC):
+    path: S3Path
 
     @property
     def _path_str(self) -> str:
         return self.path.as_uri()
 
     def read_parquet(
-        self,
-        path: S3Path = None,
-        columns: list[str] = None,
-        filters: list[tuple] | list[list[tuple]] | None = None,
+        self, path: S3Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
     ) -> pd.DataFrame:
         if path is None:
             path = self.path
@@ -102,3 +95,16 @@ class S3DataSource(BaseDataSource, ABC):
                 "config_kwargs": {"s3": {"addressing_style": "virtual"}},
             },
         )
+
+
+class SqlDataSource(BaseDataSource, ABC):
+    connection_str: str
+
+    @property
+    def _path_str(self) -> str:
+        return self.connection_str.split("/")[-1]
+
+    def read_sql(self, query: str = None) -> pd.DataFrame:
+        if query is None:
+            query = f"SELECT * FROM {self.connection_str}"
+        return pd.read_sql(query, self.connection_str)

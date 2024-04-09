@@ -8,20 +8,38 @@ from pyarrow import parquet as pq
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
-from juniper.data_loading.data_source import BaseDataSource, S3DataSource, LocalDataSource
+from juniper.data_loading.data_source import (
+    BaseDataSource,
+    S3ParquetDataSource,
+    LocalDataSource,
+    SqlDataSource,
+    ParquetDataSource,
+)
 
 
 class BaseFeatureStore(BaseDataSource, ABC):
+    def get_metadata(self):
+        self.schema = self.get_schema()
+        self.metadata = self.get_feature_metadata(self.schema)
+
+    @abstractmethod
+    def get_schema(self) -> pa.Schema:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
+        pass
+
+
+class BaseParquetFeatureStore(BaseFeatureStore, ParquetDataSource, ABC):
     def __init__(self, path: Path = None):
         config = load_config()
         if path is None:
             path = config["data_sources"]["feature_store"]["location"]
+        self.path = path
         self.timestamp_column = config["data_sources"]["feature_store"]["timestamp_column"]
-        super().__init__(path=path)
-
-    def get_metadata(self):
-        self.schema = self.get_schema()
-        self.metadata = self.get_feature_metadata(self.schema)
+        super().__init__()
 
     def _load_train_test(
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
@@ -41,17 +59,8 @@ class BaseFeatureStore(BaseDataSource, ABC):
             test = None
         return train, test
 
-    @abstractmethod
-    def get_schema(self) -> pa.Schema:
-        pass
 
-    @classmethod
-    @abstractmethod
-    def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
-        pass
-
-
-class ParquetFeatureStore(BaseFeatureStore, ABC):
+class ParquetFeatureStore(BaseParquetFeatureStore, ABC):
     @classmethod
     def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
         columns = defaultdict(list)
@@ -118,7 +127,7 @@ class LocalParquetFeatureStore(ParquetFeatureStore, LocalDataSource):
         return pq.read_schema(path)
 
 
-class S3ParquetFeatureStore(ParquetFeatureStore, S3DataSource):
+class S3ParquetParquetFeatureStore(ParquetFeatureStore, S3ParquetDataSource):
     def get_schema(self) -> pa.Schema:
         try:
             path = next(self.path.iterdir())
@@ -133,3 +142,19 @@ class S3ParquetFeatureStore(ParquetFeatureStore, S3DataSource):
                 secret_key=config["minio"]["aws_secret_access_key"],
             ),
         )
+
+
+class SqlFeatureStore(BaseParquetFeatureStore, SqlDataSource):
+    def __init__(self, connection_str: str = None):
+        if connection_str is None:
+            config = load_config()
+            connection_str = config["data_sources"]["feature_store"]["location"]
+        self.connection_str = connection_str
+        super().__init__()
+
+    def get_schema(self) -> pa.Schema:
+        pass
+
+    @classmethod
+    def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
+        pass

@@ -11,7 +11,7 @@ from juniper.common.component import ModelComponent
 from juniper.common.data_type import FeatureType
 from juniper.common.export import get_onnx_types, merge_models
 from juniper.common.setup import load_config
-from juniper.data_loading.feature_store import BaseFeatureStore
+from juniper.data_loading.feature_store import BaseParquetFeatureStore
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.pipelines import (
     get_default_numeric_pipeline,
@@ -25,7 +25,7 @@ from juniper.modeling.metrics import EvalMetrics
 class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
     def __init__(
         self,
-        feature_store: BaseFeatureStore,
+        feature_store: BaseParquetFeatureStore,
         schema: pa.Schema = None,
         numeric_pipeline: Pipeline | None = None,
         categorical_pipeline: Pipeline | None = None,
