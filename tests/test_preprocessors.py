@@ -50,7 +50,7 @@ def test_get_array_metadata(feature_store):
         field=field, preprocessor_factory=partial(ColumnTransformer, feature_store=feature_store, prefix="arr.")
     )
     assert cn.schema_out is not None
-    metadata = feature_store.get_feature_metadata(cn.schema_out)
+    metadata = feature_store.get_feature_types(cn.schema_out)
     assert metadata is not None
     assert dict(metadata) == {
         FeatureType.NUMERIC: ["arr.a", "arr.b"],

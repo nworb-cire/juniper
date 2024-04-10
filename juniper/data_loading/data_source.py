@@ -26,10 +26,6 @@ class BaseDataSource(ABC):
         pass
 
     @abstractmethod
-    def get_metadata(self):
-        pass
-
-    @abstractmethod
     def _load_train_test(
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:

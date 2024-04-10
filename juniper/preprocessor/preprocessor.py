@@ -35,7 +35,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
     ):
         if schema is None:
             schema = feature_store.schema
-        metadata = feature_store.get_feature_metadata(schema)
+        metadata = feature_store.get_feature_types(schema)
 
         transformers = []
         if columns := metadata.get(FeatureType.NUMERIC):

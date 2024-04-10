@@ -22,7 +22,7 @@ class BaseFeatureStore(BaseDataSource, ABC):
 
     def get_metadata(self):
         self.schema = self.get_schema()
-        self.metadata = self.get_feature_metadata(self.schema)
+        self.feature_types = self.get_feature_types(self.schema)
 
     @abstractmethod
     def get_schema(self) -> pa.Schema:
@@ -30,7 +30,7 @@ class BaseFeatureStore(BaseDataSource, ABC):
 
     @classmethod
     @abstractmethod
-    def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
+    def get_feature_types(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
         pass
 
 
@@ -63,7 +63,7 @@ class BaseParquetFeatureStore(BaseFeatureStore, ParquetDataSource, ABC):
 
 class ParquetFeatureStore(BaseParquetFeatureStore, ABC):
     @classmethod
-    def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
+    def get_feature_types(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
         columns = defaultdict(list)
 
         config = load_config()
@@ -159,7 +159,7 @@ class SqlFeatureStore(BaseFeatureStore, SqlDataSource):
         pass
 
     @classmethod
-    def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
+    def get_feature_types(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
         pass
 
     def _load_train_test(
