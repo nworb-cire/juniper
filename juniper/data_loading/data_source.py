@@ -12,10 +12,12 @@ from juniper.common.setup import load_config
 class BaseDataSource(ABC):
     index_column: str
     timestamp_column: str
+    config_location: str
 
     def __init__(self):
         config = load_config()
         self.index_column = config["data_sources"]["index_column"]
+        self.timestamp_column = config["data_sources"][self.config_location]["timestamp_column"]
         self.get_metadata()
 
     @property
@@ -104,7 +106,5 @@ class SqlDataSource(BaseDataSource, ABC):
     def _path_str(self) -> str:
         return self.connection_str.split("/")[-1]
 
-    def read_sql(self, query: str = None) -> pd.DataFrame:
-        if query is None:
-            query = f"SELECT * FROM {self.connection_str}"
-        return pd.read_sql(query, self.connection_str)
+    def read_sql(self, query: str, params=None) -> pd.DataFrame:
+        return pd.read_sql(query, self.connection_str, params=params)

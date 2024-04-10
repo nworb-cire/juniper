@@ -18,6 +18,8 @@ from juniper.data_loading.data_source import (
 
 
 class BaseFeatureStore(BaseDataSource, ABC):
+    config_location = "feature_store"
+
     def get_metadata(self):
         self.schema = self.get_schema()
         self.metadata = self.get_feature_metadata(self.schema)
@@ -38,7 +40,6 @@ class BaseParquetFeatureStore(BaseFeatureStore, ParquetDataSource, ABC):
         if path is None:
             path = config["data_sources"]["feature_store"]["location"]
         self.path = path
-        self.timestamp_column = config["data_sources"]["feature_store"]["timestamp_column"]
         super().__init__()
 
     def _load_train_test(
@@ -144,12 +145,14 @@ class S3ParquetParquetFeatureStore(ParquetFeatureStore, S3ParquetDataSource):
         )
 
 
-class SqlFeatureStore(BaseParquetFeatureStore, SqlDataSource):
+class SqlFeatureStore(BaseFeatureStore, SqlDataSource):
     def __init__(self, connection_str: str = None):
+        config = load_config()
         if connection_str is None:
-            config = load_config()
             connection_str = config["data_sources"]["feature_store"]["location"]
         self.connection_str = connection_str
+        query = config["data_sources"]["feature_store"]["query"]
+        self.query = query
         super().__init__()
 
     def get_schema(self) -> pa.Schema:
@@ -158,3 +161,15 @@ class SqlFeatureStore(BaseParquetFeatureStore, SqlDataSource):
     @classmethod
     def get_feature_metadata(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
         pass
+
+    def _load_train_test(
+        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
+    ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
+        idx = train_idx.tolist() + (test_idx.tolist() if test_idx is not None else [])
+        df = self.read_sql(self.query.format(idx=tuple(idx)))
+        train = df[df[self.index_column].isin(train_idx)]
+        if test_idx is not None:
+            test = df[df[self.index_column].isin(test_idx)]
+        else:
+            test = None
+        return train, test

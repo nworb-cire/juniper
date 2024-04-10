@@ -11,6 +11,7 @@ from juniper.data_loading.data_source import S3ParquetDataSource, BaseDataSource
 
 
 class BaseOutcomes(BaseDataSource, ABC):
+    config_location = "outcomes"
     metadata: pd.Series
 
     def __init__(self, path: S3Path = None):
@@ -18,7 +19,6 @@ class BaseOutcomes(BaseDataSource, ABC):
         if path is None:
             path = config["data_sources"]["outcomes"]["location"]
         self.path = path
-        self.timestamp_column = config["data_sources"]["outcomes"]["timestamp_column"]
         super().__init__()
 
     def index_range(self, start: pd.Timestamp | None, end: pd.Timestamp | None) -> pd.Index:

@@ -20,8 +20,11 @@ def load_config() -> dict:
         config = tomllib.load(f)
 
     for source in ["feature_store", "outcomes"]:
+        SQL_PREFIXES = ("sqlite://", "postgresql://", "mysql://", "trino://")  # TODO
         if config["data_sources"][source]["location"].startswith("s3://"):
             config["data_sources"][source]["location"] = S3Path(config["data_sources"][source]["location"][4:])
+        elif config["data_sources"][source]["location"].startswith(SQL_PREFIXES):
+            pass
         else:
             config["data_sources"][source]["location"] = project_root() / config["data_sources"][source]["location"]
     return config
