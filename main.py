@@ -20,8 +20,8 @@ if __name__ == "__main__":
 
     config = load_config()
     cv_split = TimeSeriesSplit(
-        pd.Timedelta(days=config["model"]["modeling"]["cv_split"]["days"]),
-        n_splits=config["model"]["modeling"]["cv_split"]["n_splits"],
+        pd.Timedelta(days=config["model"]["training"]["cv_split"]["days"]),
+        n_splits=config["model"]["training"]["cv_split"]["n_splits"],
     )
     for train_idx, test_idx, train_time_end in cv_split.split(outcomes):
         # TODO: Move this to a separate function
@@ -50,6 +50,6 @@ if __name__ == "__main__":
             y_test,
             config["model"]["hyperparameters"],
         )
-        logging.info(f"Training metrics: {metrics[-1]}")
+        # logging.info(f"Training metrics: {metrics[-1]}")
         onnx = model.to_onnx(metrics=metrics)
         model.save(path=f"models/model_{train_time_end.date()}.onnx")

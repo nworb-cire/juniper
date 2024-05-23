@@ -93,13 +93,14 @@ class TorchModel(ModelComponent):
         dummy_input = dummy_inference(self.preprocessor_onnx)
         dummy_input = {k: torch.tensor(v) for k, v in dummy_input.items()}
 
+        self.model.eval()
         with io.BytesIO() as f:
             torch.onnx.export(
                 self.model,
                 args=(dummy_input, {}),  # Trailing empty dict is for kwargs, see docstring for this function
                 f=f,
                 input_names=list(dummy_input.keys()),
-                output_names=self.model_outputs,
+                output_names=self.model.outputs,
                 dynamic_axes={k: {1: "sequence"} for k in dummy_input.keys() if k != "features"},
             )
             f.seek(0)
