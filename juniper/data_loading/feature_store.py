@@ -87,6 +87,8 @@ class ParquetFeatureStore(BaseParquetFeatureStore, ABC):
 
         for i in range(len(schema)):
             field = schema.field(i)
+            if field.name in columns[FeatureType.UNUSABLE] + columns[FeatureType.ARRAY]:
+                continue
             if field.name.startswith(tuple(columns[FeatureType.ARRAY])):
                 # Sometimes array fields may get extracted into a flattened schema if the array has length 1
                 if field.name not in columns[FeatureType.ARRAY]:
