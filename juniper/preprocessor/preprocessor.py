@@ -32,6 +32,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
         boolean_pipeline: Pipeline | None = None,
         timestamp_pipeline: Pipeline | None = None,
         prefix: str = "",
+        n_jobs: int = -1,
     ):
         if schema is None:
             schema = feature_store.schema
@@ -79,7 +80,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
         super().__init__(
             transformers=transformers,
             remainder="drop",
-            n_jobs=-1,
+            n_jobs=n_jobs,
             verbose=True,
             verbose_feature_names_out=False,
         )
