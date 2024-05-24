@@ -1,11 +1,9 @@
 import os
-from pathlib import Path
 
-import pandas as pd
 import pytest
 
 from juniper.data_loading.feature_store import LocalParquetFeatureStore
-from juniper.data_loading.outcomes import StandardOutcomes
+from juniper.data_loading.outcomes import LocalStandardOutcomes
 
 
 @pytest.fixture
@@ -20,23 +18,12 @@ def feature_store(config):
     return LocalParquetFeatureStore()
 
 
-class TestOutcomes(StandardOutcomes):
-    def _get_columns(self, df: pd.DataFrame) -> list[str]:
+class TestOutcomes(LocalStandardOutcomes):
+    def _get_columns(self, columns: list[str] = None) -> list[str]:
         return list(self.binary_outcomes_list)
 
     def _path_str(self) -> str:
         return "test"
-
-    def read_parquet(
-        self, path: Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
-    ) -> pd.DataFrame:
-        return pd.DataFrame(
-            {
-                self.index_column: range(365),
-                self.timestamp_column: pd.date_range(start="2021-01-01", periods=365, freq="D"),
-                "outcome": [0] * 365,
-            }
-        )
 
 
 @pytest.fixture

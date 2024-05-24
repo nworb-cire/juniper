@@ -46,17 +46,17 @@ class BaseParquetFeatureStore(BaseFeatureStore, ParquetDataSource, ABC):
         super().__init__()
 
     def _load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
+        self, train_idx: pd.Index = None, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-        train = self.read_parquet(
-            filters=~ds.column(self.index_column).is_null() & pc.is_in(self.index_column, pa.array(train_idx))
-        )
+        filters = ~ds.column(self.index_column).is_null()
+        if train_idx is not None:
+            filters &= pc.is_in(self.index_column, pa.array(train_idx))
+        train = self.read_parquet(filters=filters)
         train = train.sort_values(self.timestamp_column)
         train = train[~train.index.duplicated(keep="last")]
         if test_idx is not None:
-            test = self.read_parquet(
-                filters=~ds.column(self.index_column).is_null() & pc.is_in(self.index_column, pa.array(test_idx))
-            )
+            filters = ~ds.column(self.index_column).is_null() & pc.is_in(self.index_column, pa.array(test_idx))
+            test = self.read_parquet(filters=filters)
             test = test.sort_values(self.timestamp_column)
             test = test[~test.index.duplicated(keep="last")]
         else:

@@ -31,7 +31,7 @@ class BaseDataSource(ABC):
 
     @abstractmethod
     def _load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
+        self, train_idx: pd.Index = None, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         pass
 
