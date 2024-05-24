@@ -58,6 +58,7 @@ def get_default_timestamp_pipeline(columns: list[str]) -> Pipeline:
                         )
                     ],
                     remainder="passthrough",
+                    verbose_feature_names_out=False,
                 ),
             ),
             ("typecast", CastTransformer()),

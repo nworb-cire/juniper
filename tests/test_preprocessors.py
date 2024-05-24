@@ -168,7 +168,7 @@ def test_inference_all_null_values(feature_store):
             # "missingindicator_num": [1.0],
             "cat": [3.0],
             "bool": [-1.0],
-            "timestamp__ts": [-12419.6669921875],
+            "ts": [-12419.6669921875],
             "arr": [np.array([[0.0], [0.0]])],
         },
         index=pd.Index([1], name="id"),
