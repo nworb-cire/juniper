@@ -14,7 +14,6 @@ from juniper.data_loading.data_source import (
     BaseDataSource,
     S3ParquetDataSource,
     LocalDataSource,
-    SqlDataSource,
     ParquetDataSource,
 )
 
@@ -153,31 +152,34 @@ class S3ParquetParquetFeatureStore(ParquetFeatureStore, S3ParquetDataSource):
         )
 
 
-class SqlFeatureStore(BaseFeatureStore, SqlDataSource):
-    def __init__(self, connection_str: str | None = None):
-        config = load_config()
-        if connection_str is None:
-            connection_str = config["data_sources"]["feature_store"]["location"]
-        self.connection_str = connection_str
-        query = config["data_sources"]["feature_store"]["query"]
-        self.query = query
-        super().__init__()
-
-    def get_schema(self) -> pa.Schema:
-        pass
-
-    @classmethod
-    def get_feature_types(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
-        pass
-
-    def _load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index | None = None, train_time_end: pd.Timestamp | None = None
-    ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-        idx = train_idx.tolist() + (test_idx.tolist() if test_idx is not None else [])
-        df = self.read_sql(self.query.format(idx=tuple(idx)))
-        train = df[df[self.index_column].isin(train_idx)]
-        if test_idx is not None:
-            test = df[df[self.index_column].isin(test_idx)]
-        else:
-            test = None
-        return train, test
+# class SqlFeatureStore(BaseFeatureStore, SqlDataSource):
+#     def __init__(self, connection_str: str | None = None):
+#         config = load_config()
+#         if connection_str is None:
+#             connection_str = config["data_sources"]["feature_store"]["location"]
+#         self.connection_str = connection_str
+#         query = config["data_sources"]["feature_store"]["query"]
+#         self.query = query
+#         super().__init__()
+#
+#     def get_schema(self) -> pa.Schema:
+#         pass
+#
+#     @classmethod
+#     def get_feature_types(cls, schema: pa.Schema) -> dict[FeatureType, list[str]]:
+#         raise NotImplementedError
+#
+#     def _load_train_test(
+#         self,
+#         train_idx: pd.Index | None = None,
+#         test_idx: pd.Index | None = None,
+#         train_time_end: pd.Timestamp | None = None,
+#     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
+#         idx = train_idx.tolist() + (test_idx.tolist() if test_idx is not None else [])
+#         df = self.read_sql(self.query.format(idx=tuple(idx)))
+#         train = df[df[self.index_column].isin(train_idx)]
+#         if test_idx is not None:
+#             test = df[df[self.index_column].isin(test_idx)]
+#         else:
+#             test = None
+#         return train, test
