@@ -45,7 +45,10 @@ class BaseDataSource(ABC):
         t = time.monotonic()
         ret = self._load_train_test(train_idx, test_idx, train_time_end)
         logging.info(f"Loaded {self.__class__.__name__} in {time.monotonic() - t:.3f} seconds")
-        logging.info(f"  Train size: {len(ret[0])}, test size: {len(ret[1])}")
+        msg = f"  Train size: {len(ret[0])}"
+        if ret[1] is not None:
+            msg += f", test size: {len(ret[1])}"
+        logging.info(msg)
         return ret
 
 

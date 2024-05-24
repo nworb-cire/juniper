@@ -109,8 +109,8 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
     def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: pd.Timestamp):
         all_cols = self._get_columns()
         _offsets = set(c.split("_")[-1] for c in all_cols)
-        for offset in _offsets:
-            offset = int(offset)
+        for off in _offsets:
+            offset = int(off)
             cols = [c for c in df.columns if c.endswith(f"_{offset}")]
             delta_holdout_date = train_time_end - pd.Timedelta(days=offset)
             for col in cols:

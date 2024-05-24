@@ -432,7 +432,7 @@ def json_normalize(
 
         return result
 
-    def _pull_records(js: dict[str, Any], spec: list | str) -> list:
+    def _pull_records(js: dict[str, Any], spec: list | str) -> list | np.ndarray:
         """
         Internal function to pull field for records, and similar to
         _pull_field, but require to return list. And will raise error
