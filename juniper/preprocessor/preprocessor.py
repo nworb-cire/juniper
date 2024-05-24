@@ -64,7 +64,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
             for column in columns:
                 feature_metadata = config["data_sources"]["feature_store"].get("feature_meta", {}).get(column, {})
                 try:
-                    transformer = ColumnNormalizer(
+                    cn = ColumnNormalizer(
                         field=schema.field(column),
                         preprocessor_factory=partial(
                             ColumnTransformer, feature_store=feature_store, prefix=f"{prefix}{column}."
@@ -72,7 +72,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
                         record_path=feature_metadata.get("record_path"),
                         meta=feature_metadata.get("meta"),
                     )
-                    transformers.append((column, transformer, [column]))
+                    transformers.append((column, cn, [column]))
                 except ValueError as e:
                     logging.warning(f"Error creating ColumnNormalizer for {column}: {e}")
                     continue
