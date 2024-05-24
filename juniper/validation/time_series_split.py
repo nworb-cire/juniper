@@ -38,7 +38,7 @@ class TimeSeriesSplit:
             test_idx = outcomes.index_range(holdout_time_begin, holdout_time_end)
             logging.info("#" * 10 + f" Time Series CV Split #{i+1}/{self.n_splits} " + "#" * 10)
             logging.info(f"-----> {train_time_end} | {holdout_time_begin} <---> {holdout_time_end}")
-            # logging.info(f" Train size: {len(train_idx)}, val size: {len(test_idx)}")
+            logging.info(f" Train size: {len(train_idx)}, val size: {len(test_idx)}")
             yield train_idx, test_idx, train_time_end
 
     # def add_score(self, score):

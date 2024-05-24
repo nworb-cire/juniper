@@ -5,6 +5,8 @@ from pathlib import Path
 import pandas as pd
 import pyarrow as pa
 from pyarrow import parquet as pq
+from pyarrow import dataset as ds
+from pyarrow import compute as pc
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
@@ -46,13 +48,13 @@ class BaseParquetFeatureStore(BaseFeatureStore, ParquetDataSource, ABC):
         self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         train = self.read_parquet(
-            filters=[(self.index_column, "in", train_idx.tolist())],
+            filters=~ds.column(self.index_column).is_null() & pc.is_in(self.index_column, pa.array(train_idx))
         )
         train = train.sort_values(self.timestamp_column)
         train = train[~train.index.duplicated(keep="last")]
         if test_idx is not None:
             test = self.read_parquet(
-                filters=[(self.index_column, "in", test_idx.tolist())],
+                filters=~ds.column(self.index_column).is_null() & pc.is_in(self.index_column, pa.array(test_idx))
             )
             test = test.sort_values(self.timestamp_column)
             test = test[~test.index.duplicated(keep="last")]
