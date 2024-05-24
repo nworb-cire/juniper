@@ -14,6 +14,8 @@ repos:
     rev: v2.3.0
     hooks:
     -   id: codespell
+        args:
+        - --exclude-file=poetry.lock
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.5
     hooks:
