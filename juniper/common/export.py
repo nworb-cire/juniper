@@ -13,7 +13,7 @@ from juniper.modeling.metrics import EvalMetrics
 
 
 def get_common_opset(m1: onnx.ModelProto, m2: onnx.ModelProto) -> list[onnx.OperatorSetIdProto]:
-    opset = defaultdict(int)
+    opset: dict[str, int] = defaultdict(int)
     for m in (m1, m2):
         for op in m.opset_import:
             opset[op.domain] = max(opset[op.domain], op.version)

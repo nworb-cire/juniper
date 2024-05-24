@@ -49,7 +49,7 @@ def get_input_mapping(preprocessor: ColumnTransformer) -> dict[str, list[str]]:
     :param preprocessor: Fitted ColumnTransformer
     :return: Inverse mapping of preprocessor outputs to preprocessor inputs
     """
-    ret = defaultdict(list)
+    ret: dict[str, list[str]] = defaultdict(list)
     for name, slice_ in preprocessor.output_indices_.items():
         if name == "remainder":
             continue
