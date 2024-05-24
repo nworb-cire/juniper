@@ -1,12 +1,13 @@
 import io
 import logging
 import time
-from typing import Type, Callable
+from typing import Type, Callable, Any
 
 import numpy as np
 import onnx
 import pandas as pd
 import torch
+from torch import nn
 
 from juniper.common.component import ModelComponent
 from juniper.common.export import merge_models, add_default_metadata, add_metrics
@@ -17,7 +18,7 @@ from juniper.modeling.utils import batches, dummy_inference
 
 
 class TorchModel(ModelComponent):
-    def __init__(self, model_cls: Type, loss_fn: Callable, preprocessor: ColumnTransformer):
+    def __init__(self, model_cls: Type[nn.Module], loss_fn: Callable, preprocessor: ColumnTransformer):
         self.preprocessor = preprocessor
         self.preprocessor_onnx = self.preprocessor.to_onnx()
         self.preprocessor_inputs = get_input_mapping(self.preprocessor)
@@ -25,6 +26,7 @@ class TorchModel(ModelComponent):
         self.loss_fn = loss_fn
 
     def _loss(self, x: pd.DataFrame, y: pd.DataFrame):
+        assert self.model is not None, "Model must be initialized before calling _loss"
         yhat = self.model.forward(x)
         return self.loss_fn(yhat, torch.tensor(y.values, dtype=torch.float32))
 
@@ -39,9 +41,9 @@ class TorchModel(ModelComponent):
         self,
         x_train: pd.DataFrame,
         y_train: pd.DataFrame,
+        hyperparameters: dict[str, Any],
         x_test: pd.DataFrame | None = None,
         y_test: pd.DataFrame | None = None,
-        hyperparameters: dict | None = None,
     ) -> list[EvalMetrics]:
         assert (
             x_train.shape[0] == y_train.shape[0]
@@ -90,6 +92,7 @@ class TorchModel(ModelComponent):
             assert not np.isnan(val).any(), "Model produced NaN values"
 
     def to_onnx(self, name: str | None = None, metrics: list[EvalMetrics] | None = None) -> onnx.ModelProto:
+        assert self.model is not None, "Model must be initialized before calling to_onnx"
         dummy_input = dummy_inference(self.preprocessor_onnx)
         dummy_input = {k: torch.tensor(v) for k, v in dummy_input.items()}
 

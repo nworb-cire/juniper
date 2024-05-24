@@ -44,11 +44,11 @@ if __name__ == "__main__":
             preprocessor=preprocessor,
         )
         metrics = model.fit(
-            x_train,
-            y_train,
-            x_test,
-            y_test,
-            config["model"]["hyperparameters"],
+            x_train=x_train,
+            y_train=y_train,
+            x_test=x_test,
+            y_test=y_test,
+            hyperparameters=config["model"]["hyperparameters"],
         )
         # logging.info(f"Training metrics: {metrics[-1]}")
         onnx = model.to_onnx(metrics=metrics)

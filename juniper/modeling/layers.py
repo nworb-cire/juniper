@@ -36,9 +36,9 @@ class Unify(nn.Module):
         padding_value=0.0,
     ):
         super().__init__()
-        self.modules = modules
+        self.modules_ = modules
         self.padding_value = padding_value
-        for name, module in self.modules.items():
+        for name, module in self.modules_.items():
             self.add_module(name.replace(".", "_"), module)
 
     def forward(self, x: pd.DataFrame | dict) -> torch.Tensor:
@@ -52,7 +52,7 @@ class Unify(nn.Module):
     # TODO: ensure order is always the same
     def forward_df(self, x: pd.DataFrame) -> torch.Tensor:
         ret = torch.Tensor()
-        for col, module in self.modules.items():
+        for col, module in self.modules_.items():
             tensors = x[col].apply(torch.tensor).apply(lambda x: x.T)
             if self.padding_value is not None:
                 y = torch.nn.utils.rnn.pad_sequence(
@@ -65,12 +65,12 @@ class Unify(nn.Module):
             y = module(y)  # BxV
             ret = torch.cat([ret, y], dim=-1)
         ret = torch.cat(
-            [ret, torch.tensor(x.drop(columns=list(self.modules.keys())).values, dtype=torch.float32)], dim=-1
+            [ret, torch.tensor(x.drop(columns=list(self.modules_.keys())).values, dtype=torch.float32)], dim=-1
         )
         return ret
 
     def forward_dict(self, x: dict[str, torch.Tensor]) -> torch.Tensor:
         """This method should only be used during ONNX export"""
         return torch.cat(
-            [module(x[col].T.unsqueeze(0)) for col, module in self.modules.items()] + [x["features"]], dim=-1
+            [module(x[col].T.unsqueeze(0)) for col, module in self.modules_.items()] + [x["features"]], dim=-1
         )

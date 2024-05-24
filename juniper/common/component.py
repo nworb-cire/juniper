@@ -1,4 +1,5 @@
 import abc
+from typing import Any
 
 import onnx
 
@@ -6,7 +7,7 @@ from juniper.modeling.metrics import EvalMetrics
 
 
 class ModelComponent(abc.ABC):
-    model = None
+    model: Any = None
 
     @abc.abstractmethod
     def fit(self, *args, **kwargs):
