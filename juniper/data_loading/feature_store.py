@@ -25,6 +25,7 @@ class BaseFeatureStore(BaseDataSource, ABC):
     def get_metadata(self):
         self.schema = self.get_schema()
         self.feature_types = self.get_feature_types(self.schema)
+        return self.feature_types
 
     @abstractmethod
     def get_schema(self) -> pa.Schema:

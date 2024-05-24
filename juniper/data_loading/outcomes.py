@@ -117,7 +117,6 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         df = df[self.timestamp_column]
         df = df.dropna()
         # df = df.sort_values()
-        self.metadata = df
         return df
 
 

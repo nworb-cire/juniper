@@ -18,7 +18,11 @@ class BaseDataSource(ABC):
         config = load_config()
         self.index_column = config["data_sources"]["index_column"]
         self.timestamp_column = config["data_sources"][self.config_location]["timestamp_column"]
-        self.get_metadata()
+        self.metadata = self.get_metadata()
+
+    @abstractmethod
+    def get_metadata(self):
+        pass
 
     @property
     @abstractmethod
