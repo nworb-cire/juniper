@@ -29,7 +29,6 @@ sqlalchemy-trino = "*"
 tabulate = "*"
 torch = "^2.2.0"
 trino = "*"
-xgboost = "*"
 
 
 [tool.ruff]
