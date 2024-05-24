@@ -26,7 +26,9 @@ if __name__ == "__main__":
     for train_idx, test_idx, train_time_end in cv_split.split(outcomes):
         # TODO: Move this to a separate function
         train, test = feature_store.load_train_test(train_idx, test_idx)
+        assert test is not None
         y_train, y_test = outcomes.load_train_test(train.index, test.index, train_time_end)
+        assert y_test is not None
         train = train.reindex(y_train.index)
         test = test.reindex(y_test.index)
 

@@ -19,11 +19,8 @@ def feature_store(config):
 
 
 class TestOutcomes(LocalStandardOutcomes):
-    def _get_columns(self, columns: list[str] = None) -> list[str]:
+    def _get_columns(self, columns: list[str] | None = None) -> list[str]:
         return list(self.binary_outcomes_list)
-
-    def _path_str(self) -> str:
-        return "test"
 
 
 @pytest.fixture
