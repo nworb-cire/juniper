@@ -18,7 +18,7 @@ class BaseOutcomes(BaseDataSource, ABC):
     config_location = "outcomes"
     metadata: pd.Series
 
-    def __init__(self, path: S3Path = None):
+    def __init__(self, path: S3Path | None = None):
         config = load_config()
         if path is None:
             path = config["data_sources"]["outcomes"]["location"]
@@ -62,7 +62,10 @@ class BasePivotedOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         return df
 
     def _load_train_test(
-        self, train_idx: pd.Index = None, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
+        self,
+        train_idx: pd.Index | None = None,
+        test_idx: pd.Index | None = None,
+        train_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         config = load_config()
         outcomes_columns = config["data_sources"]["outcomes"]["binary_outcomes_list"]
@@ -98,7 +101,7 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         self.binary_outcomes_list = tuple(config["data_sources"]["outcomes"]["binary_outcomes_list"])
         super().__init__(*args, **kwargs)
 
-    def _get_columns(self, columns: list[str] = None) -> list[str]:
+    def _get_columns(self, columns: list[str] | None = None) -> list[str]:
         if columns is None:
             columns = self.all_columns
         return [c for c in columns if c.startswith(self.binary_outcomes_list) and re.match(r"\w+_\d{1,4}$", c)]
@@ -115,7 +118,10 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         return df.dropna(how="all", subset=all_cols)
 
     def _load_train_test(
-        self, train_idx: pd.Index = None, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
+        self,
+        train_idx: pd.Index | None = None,
+        test_idx: pd.Index | None = None,
+        train_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         filters = ~ds.column(self.index_column).is_null()
         if train_idx is not None:

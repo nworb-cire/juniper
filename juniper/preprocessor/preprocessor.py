@@ -26,7 +26,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
     def __init__(
         self,
         feature_store: BaseFeatureStore,
-        schema: pa.Schema = None,
+        schema: pa.Schema | None = None,
         numeric_pipeline: Pipeline | None = None,
         categorical_pipeline: Pipeline | None = None,
         boolean_pipeline: Pipeline | None = None,

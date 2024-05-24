@@ -39,9 +39,9 @@ class TorchModel(ModelComponent):
         self,
         x_train: pd.DataFrame,
         y_train: pd.DataFrame,
-        x_test: pd.DataFrame = None,
-        y_test: pd.DataFrame = None,
-        hyperparameters: dict = None,
+        x_test: pd.DataFrame | None = None,
+        y_test: pd.DataFrame | None = None,
+        hyperparameters: dict | None = None,
     ) -> list[EvalMetrics]:
         assert (
             x_train.shape[0] == y_train.shape[0]

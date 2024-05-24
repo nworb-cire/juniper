@@ -31,12 +31,15 @@ class BaseDataSource(ABC):
 
     @abstractmethod
     def _load_train_test(
-        self, train_idx: pd.Index = None, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
+        self,
+        train_idx: pd.Index | None = None,
+        test_idx: pd.Index | None = None,
+        train_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         pass
 
     def load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
+        self, train_idx: pd.Index, test_idx: pd.Index | None = None, train_time_end: pd.Timestamp | None = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         logging.info(f"Loading {self.__class__.__name__} from {self._path_str}")
         t = time.monotonic()
@@ -51,7 +54,10 @@ class ParquetDataSource(BaseDataSource, ABC):
 
     @abstractmethod
     def read_parquet(
-        self, path: Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
+        self,
+        path: Path | None = None,
+        columns: list[str] | None = None,
+        filters: list[tuple] | list[list[tuple]] | None = None,
     ) -> pd.DataFrame:
         pass
 
@@ -62,7 +68,10 @@ class LocalDataSource(ParquetDataSource, ABC):
         return str(self.path.absolute())
 
     def read_parquet(
-        self, path: Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
+        self,
+        path: Path | None = None,
+        columns: list[str] | None = None,
+        filters: list[tuple] | list[list[tuple]] | None = None,
     ) -> pd.DataFrame:
         if path is None:
             path = self.path
@@ -78,7 +87,10 @@ class S3ParquetDataSource(ParquetDataSource, ABC):
         return self.path.as_uri()
 
     def read_parquet(
-        self, path: S3Path = None, columns: list[str] = None, filters: list[tuple] | list[list[tuple]] | None = None
+        self,
+        path: S3Path | None = None,
+        columns: list[str] | None = None,
+        filters: list[tuple] | list[list[tuple]] | None = None,
     ) -> pd.DataFrame:
         if path is None:
             path = self.path

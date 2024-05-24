@@ -17,8 +17,8 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         self,
         field: pa.Field,
         preprocessor_factory: Callable,
-        record_path: str = None,
-        meta: list[str | list[str]] = None,
+        record_path: str | None = None,
+        meta: list[str | list[str]] | None = None,
     ):
         self.field = field
         self.preprocessor_factory = preprocessor_factory

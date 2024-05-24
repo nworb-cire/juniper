@@ -38,7 +38,7 @@ class BaseFeatureStore(BaseDataSource, ABC):
 
 
 class BaseParquetFeatureStore(BaseFeatureStore, ParquetDataSource, ABC):
-    def __init__(self, path: Path = None):
+    def __init__(self, path: Path | None = None):
         config = load_config()
         if path is None:
             path = config["data_sources"]["feature_store"]["location"]
@@ -46,7 +46,10 @@ class BaseParquetFeatureStore(BaseFeatureStore, ParquetDataSource, ABC):
         super().__init__()
 
     def _load_train_test(
-        self, train_idx: pd.Index = None, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
+        self,
+        train_idx: pd.Index | None = None,
+        test_idx: pd.Index | None = None,
+        train_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         filters = ~ds.column(self.index_column).is_null()
         if train_idx is not None:
@@ -151,7 +154,7 @@ class S3ParquetParquetFeatureStore(ParquetFeatureStore, S3ParquetDataSource):
 
 
 class SqlFeatureStore(BaseFeatureStore, SqlDataSource):
-    def __init__(self, connection_str: str = None):
+    def __init__(self, connection_str: str | None = None):
         config = load_config()
         if connection_str is None:
             connection_str = config["data_sources"]["feature_store"]["location"]
@@ -168,7 +171,7 @@ class SqlFeatureStore(BaseFeatureStore, SqlDataSource):
         pass
 
     def _load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index = None, train_time_end: pd.Timestamp = None
+        self, train_idx: pd.Index, test_idx: pd.Index | None = None, train_time_end: pd.Timestamp | None = None
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         idx = train_idx.tolist() + (test_idx.tolist() if test_idx is not None else [])
         df = self.read_sql(self.query.format(idx=tuple(idx)))
