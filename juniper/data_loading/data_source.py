@@ -78,6 +78,8 @@ class LocalDataSource(ParquetDataSource, ABC):
     ) -> pd.DataFrame:
         if path is None:
             path = self.path
+        if columns is not None and self.index_column not in columns:
+            columns.append(self.index_column)
         df = pd.read_parquet(path, columns=columns, filters=filters)
         return df.set_index(self.index_column)
 
@@ -97,6 +99,8 @@ class S3ParquetDataSource(ParquetDataSource, ABC):
     ) -> pd.DataFrame:
         if path is None:
             path = self.path
+        if columns is not None and self.index_column not in columns:
+            columns.append(self.index_column)
         config = load_config()
         return pd.read_parquet(
             path.as_uri(),
