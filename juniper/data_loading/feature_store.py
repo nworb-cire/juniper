@@ -50,14 +50,14 @@ class BaseParquetFeatureStore(BaseFeatureStore, ParquetDataSource, ABC):
         test_idx: pd.Index | None = None,
         train_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-        filters = ~ds.column(self.index_column).is_null()
+        filters = ~ds.field(self.index_column).is_null()
         if train_idx is not None:
-            filters &= pc.is_in(self.index_column, pa.array(train_idx))
+            filters &= pc.is_in(ds.field(self.index_column), pa.array(train_idx))
         train = self.read_parquet(filters=filters)
         train = train.sort_values(self.timestamp_column)
         train = train[~train.index.duplicated(keep="last")]
         if test_idx is not None:
-            filters = ~ds.column(self.index_column).is_null() & pc.is_in(self.index_column, pa.array(test_idx))
+            filters = ~ds.field(self.index_column).is_null() & pc.is_in(ds.field(self.index_column), pa.array(test_idx))
             test = self.read_parquet(filters=filters)
             test = test.sort_values(self.timestamp_column)
             test = test[~test.index.duplicated(keep="last")]

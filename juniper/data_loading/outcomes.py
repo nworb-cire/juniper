@@ -70,9 +70,9 @@ class BasePivotedOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         config = load_config()
         outcomes_columns = config["data_sources"]["outcomes"]["binary_outcomes_list"]
         pivot_column = config["data_sources"]["outcomes"]["pivot_column"]
-        filters = ~ds.column(self.index_column).is_null()
+        filters = ~ds.field(self.index_column).is_null()
         if train_idx is not None:
-            filters &= pc.is_in(self.index_column, pa.array(train_idx))
+            filters &= pc.is_in(ds.field(self.index_column), pa.array(train_idx))
         train = self.read_parquet(
             filters=filters,
             columns=[outcomes_columns + [self.index_column, self.timestamp_column, pivot_column]],
@@ -80,7 +80,7 @@ class BasePivotedOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         train = self.filter_training_outcomes(train, train_time_end)
         train = train.pivot(index=self.index_column, columns=pivot_column, values=outcomes_columns)
         if test_idx is not None:
-            filters = ~ds.column(self.index_column).is_null() & pc.is_in(self.index_column, pa.array(test_idx))
+            filters = ~ds.field(self.index_column).is_null() & pc.is_in(ds.field(self.index_column), pa.array(test_idx))
             test = self.read_parquet(
                 filters=filters,
                 columns=[outcomes_columns + [self.index_column, self.timestamp_column, pivot_column]],
@@ -123,13 +123,13 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         test_idx: pd.Index | None = None,
         train_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-        filters = ~ds.column(self.index_column).is_null()
+        filters = ~ds.field(self.index_column).is_null()
         if train_idx is not None:
-            filters &= pc.is_in(self.index_column, pa.array(train_idx))
+            filters &= pc.is_in(ds.field(self.index_column), pa.array(train_idx))
         train = self.read_parquet(filters=filters, columns=self._get_columns())
         train = self.filter_training_outcomes(train, train_time_end).drop(columns=[self.timestamp_column])
         if test_idx is not None:
-            filters = ~ds.column(self.index_column).is_null() & pc.is_in(self.index_column, pa.array(test_idx))
+            filters = ~ds.field(self.index_column).is_null() & pc.is_in(ds.field(self.index_column), pa.array(test_idx))
             test = self.read_parquet(filters=filters, columns=self._get_columns())
         else:
             test = None
