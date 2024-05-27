@@ -126,11 +126,11 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         filters = ~ds.field(self.index_column).is_null()
         if train_idx is not None:
             filters &= pc.is_in(ds.field(self.index_column), pa.array(train_idx))
-        train = self.read_parquet(filters=filters, columns=self._get_columns())
+        train = self.read_parquet(filters=filters, columns=self._get_columns() + [self.timestamp_column])
         train = self.filter_training_outcomes(train, train_time_end).drop(columns=[self.timestamp_column])
         if test_idx is not None:
             filters = ~ds.field(self.index_column).is_null() & pc.is_in(ds.field(self.index_column), pa.array(test_idx))
-            test = self.read_parquet(filters=filters, columns=self._get_columns())
+            test = self.read_parquet(filters=filters, columns=self._get_columns() + [self.timestamp_column])
         else:
             test = None
         return train, test
