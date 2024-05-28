@@ -43,8 +43,10 @@ def test_time_series_split_with_non_positive_splits(outcomes, split):
 
 
 def test_time_series_split_with_include_last(outcomes):
-    with pytest.raises(NotImplementedError):
-        TimeSeriesSplit(pd.Timedelta(days=30), 3, include_last=True)
+    time_series_split = TimeSeriesSplit(pd.Timedelta(days=30), 3, include_last=True)
+    splits = list(time_series_split.split(outcomes))
+    assert len(splits) == 3
+    assert splits[-1][2] == pd.Timestamp("2021-12-31")
 
 
 def test_time_series_split_with_custom_end_ts(outcomes):

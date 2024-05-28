@@ -19,12 +19,11 @@ class TimeSeriesSplit:
         if n_splits <= 0:
             raise ValueError("n_splits must be a positive integer")
         self.timedelta = timedelta
-        self.n_splits = n_splits
+        self.include_last = include_last
+        self.n_splits = n_splits if not include_last else n_splits - 1
         self.gap = gap_days
         # self.scores = []
         self.holdout_time = holdout_time
-        if include_last:
-            raise NotImplementedError
 
     def split(
         self,
@@ -60,6 +59,8 @@ class TimeSeriesSplit:
             logging.info(f"-----> {train_time_end} | {holdout_time_begin} <---> {holdout_time_end}")
             logging.info(f" Train size: {len(train_idx)}, val size: {len(test_idx)}")
             yield train_idx, test_idx, train_time_end
+        if self.include_last:
+            yield ts.index, pd.Index([]), end_ts
 
     # def add_score(self, score):
     #     # TODO: Integrate metric logging with an experiment tracking system
