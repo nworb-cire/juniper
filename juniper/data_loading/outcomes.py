@@ -25,19 +25,6 @@ class BaseOutcomes(BaseDataSource, ABC):
         self.path = path
         super().__init__()
 
-    def index_range(self, start: pd.Timestamp | None, end: pd.Timestamp | None) -> pd.Index:
-        if start is None:
-            start = self.min_timestamp()
-        if end is None:
-            end = self.max_timestamp()
-        return self.metadata[(self.metadata >= start) & (self.metadata <= end)].index.unique()
-
-    def min_timestamp(self) -> pd.Timestamp:
-        return self.metadata.min()
-
-    def max_timestamp(self) -> pd.Timestamp:
-        return self.metadata.max()
-
     @abstractmethod
     def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: pd.Timestamp):
         raise NotImplementedError

@@ -51,6 +51,10 @@ class BaseDataSource(ABC):
         logging.info(msg)
         return ret
 
+    @abstractmethod
+    def read_timestamps(self) -> pd.Series:
+        pass
+
 
 class ParquetDataSource(BaseDataSource, ABC):
     path: Path
@@ -82,6 +86,9 @@ class LocalDataSource(ParquetDataSource, ABC):
             columns.append(self.index_column)
         df = pd.read_parquet(path, columns=columns, filters=filters)
         return df.set_index(self.index_column)
+
+    def read_timestamps(self) -> pd.Series:
+        return self.read_parquet(columns=[self.timestamp_column])[self.timestamp_column]
 
 
 class S3ParquetDataSource(ParquetDataSource, ABC):

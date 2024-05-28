@@ -23,7 +23,7 @@ if __name__ == "__main__":
         pd.Timedelta(days=config["model"]["training"]["cv_split"]["days"]),
         n_splits=config["model"]["training"]["cv_split"]["n_splits"],
     )
-    for train_idx, test_idx, train_time_end in cv_split.split(outcomes):
+    for train_idx, test_idx, train_time_end in cv_split.split(feature_store, outcomes):
         # TODO: Move this to a separate function
         train, test = feature_store.load_train_test(train_idx, test_idx)
         assert test is not None
