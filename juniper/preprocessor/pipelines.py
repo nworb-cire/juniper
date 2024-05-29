@@ -38,11 +38,11 @@ def get_default_boolean_pipeline(columns: list[str]) -> Pipeline:
 
 
 def get_default_timestamp_pipeline(columns: list[str]) -> Pipeline:
-    unix_epoch = pd.Timestamp("1970-01-01T00:00:00Z")
+    unix_epoch = pd.Timestamp("1970-01-01T00:00:00Z").timestamp()
     return Pipeline(
         steps=[
-            ("imputer", ConstantImputer(fill_value=unix_epoch, missing_values=pd.NA)),
             ("typecast", DatetimeCastTransformer()),
+            ("imputer", ConstantImputer(fill_value=unix_epoch, missing_values=pd.NA)),
             ("periodic", PeriodicTransformer()),
         ]
     )

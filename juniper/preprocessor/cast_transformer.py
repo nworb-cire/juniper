@@ -53,7 +53,7 @@ update_registered_converter(
 
 class DatetimeCastTransformer(CastTransformer):
     def __init__(self):
-        super().__init__(dtype=np.int64)
+        super().__init__(dtype=np.float64)
 
     def _cast(self, a):
         unix_epoch = pd.Timestamp("1970-01-01T00:00:00Z")
