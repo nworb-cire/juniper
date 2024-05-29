@@ -52,16 +52,30 @@ update_registered_converter(
 
 
 class DatetimeCastTransformer(CastTransformer):
-    def __init__(self):
-        super().__init__(dtype=np.float64)
+    def __init__(self, fillna: pd.Timestamp | None = None):
+        if fillna is None:
+            raise NotImplementedError("fillna must be provided for now.")
+        self.fillna = fillna
+        super().__init__(dtype=np.int64)
 
     def _cast(self, a):
-        unix_epoch = pd.Timestamp("1970-01-01T00:00:00Z")
         zero = pd.Timestamp("0001-01-01T00:00:00Z")
-        a[a == zero] = unix_epoch
+        a[a == zero] = self.fillna
         for col in a.columns:
             try:
-                a[col] = pd.to_datetime(a[col], utc=True).apply(lambda x: None if pd.isna(x) else x.timestamp())
+                # TODO: Handle nan with a nullable integer type?
+                a[col] = pd.to_datetime(a[col], utc=True).apply(
+                    lambda x: self.fillna.timestamp() if pd.isna(x) else x.timestamp()
+                )
             except (TypeError, AttributeError) as e:
                 raise TypeError(f"Column {col} is not a datetime") from e
         return super()._cast(a)
+
+
+# TODO: Validate
+update_registered_converter(
+    DatetimeCastTransformer,
+    "JuniperDatetimeCastTransformer",
+    calculate_sklearn_cast_transformer,
+    convert_sklearn_cast,
+)

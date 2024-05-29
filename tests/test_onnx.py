@@ -3,12 +3,10 @@ import tempfile
 import numpy as np
 import onnx
 import pandas as pd
-import pyarrow as pa
 import pytest
 import torch.nn
 from onnxruntime import InferenceSession
 
-from juniper.common.data_type import FeatureType
 from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.modeling.model_wrapper import Model
 from juniper.modeling.torch import TorchModel
@@ -16,9 +14,7 @@ from juniper.modeling.torch import TorchModel
 
 @pytest.fixture
 def onnx_schema(feature_store):
-    """Remove certain column types from the schema until they are ready to be supported"""
-    schema = feature_store.get_schema()
-    return pa.schema([field for field in schema if field.metadata[b"usable_type"].decode() != FeatureType.TIMESTAMP])
+    return feature_store.get_schema()
 
 
 def test_onnx_export(feature_store, onnx_schema):
@@ -54,7 +50,7 @@ def test_runtime(feature_store, onnx_schema):
     output = sess.run(["features", "arr"], input)
     assert output is not None
     assert len(output) == 2
-    expected = np.array([0.0, 3.0, -1.0])
+    expected = np.array([[0.0, 3.0, -1.0, 0.0]])
     assert np.allclose(output[0], expected)
     expected = np.array(
         [

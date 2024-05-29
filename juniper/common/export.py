@@ -54,7 +54,8 @@ def feature_type_to_onnx_type(feature_type: FeatureType, arr: bool = False) -> T
         case FeatureType.BOOLEAN:
             return FloatTensorType([dim, 1])
         case FeatureType.TIMESTAMP:
-            raise NotImplementedError("Timestamps not yet supported")
+            # FIXME: Timestamps must be converted to unix epoch in the runner
+            return FloatTensorType([dim, 1])
         case _:
             raise ValueError(f"Unknown feature type {feature_type}")
 
