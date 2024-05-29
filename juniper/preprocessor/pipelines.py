@@ -1,10 +1,10 @@
 import pandas as pd
-from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, OrdinalEncoder
 
 from juniper.preprocessor.cast_transformer import CastTransformer, DatetimeCastTransformer
 from juniper.preprocessor.constant_imputer import ConstantImputer
+from juniper.preprocessor.periodic_transformer import PeriodicTransformer
 
 
 def get_default_numeric_pipeline(columns: list[str]) -> Pipeline:
@@ -41,26 +41,8 @@ def get_default_timestamp_pipeline(columns: list[str]) -> Pipeline:
     unix_epoch = pd.Timestamp("1970-01-01T00:00:00Z")
     return Pipeline(
         steps=[
-            ("imputer", ConstantImputer(fill_value=unix_epoch, missing_values=pd.NA, add_indicator=True)),
-            (
-                "scaler",
-                ColumnTransformer(
-                    transformers=[
-                        (
-                            "timestamp",
-                            Pipeline(
-                                steps=[
-                                    ("typecast", DatetimeCastTransformer()),
-                                    ("scaler", RobustScaler()),
-                                ]
-                            ),
-                            columns,
-                        )
-                    ],
-                    remainder="passthrough",
-                    verbose_feature_names_out=False,
-                ),
-            ),
-            ("typecast", CastTransformer()),
+            ("imputer", ConstantImputer(fill_value=unix_epoch, missing_values=pd.NA)),
+            ("typecast", DatetimeCastTransformer()),
+            ("periodic", PeriodicTransformer()),
         ]
     )

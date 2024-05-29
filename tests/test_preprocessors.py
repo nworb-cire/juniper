@@ -27,10 +27,21 @@ def test_get_preprocessor(feature_store):
     "feature_type, expected",
     [
         (FeatureType.NUMERIC, [0.5154639, 0.0, -0.5154639, 0.0]),
-        # (FeatureType.NUMERIC, np.array([[0.5154639, 0.0, -0.5154639, 0.0], [0.0, 0.0, 0.0, 1.0]])),
         (FeatureType.CATEGORICAL, [0.0, 3.0, 1.0, 2.0]),
         (FeatureType.BOOLEAN, [1.0, 1.0, -1.0, 0.0]),
-        (FeatureType.TIMESTAMP, [-1.0, -1 / 3, 1 / 3, 1.0]),
+        (
+            FeatureType.TIMESTAMP,
+            np.array(
+                [
+                    [1.08805418e-02, 2.80798422e-02, 4.52708330e-02, 6.24484269e-02],
+                    [7.81831482e-01, 9.74927912e-01, 4.33883739e-01, -4.33883739e-01],
+                    [-6.01205130e-12, -1.71351267e-12, 2.58502595e-12, -7.66835066e-12],
+                    [9.99940805e-01, 9.99605683e-01, 9.98974750e-01, 9.98048192e-01],
+                    [6.23489802e-01, -2.22520934e-01, -9.00968868e-01, -9.00968868e-01],
+                    [1.00000000e00, 1.00000000e00, 1.00000000e00, 1.00000000e00],
+                ]
+            ),
+        ),
     ],
 )
 def test_fit_preprocessor(feature_type, expected, feature_store):
@@ -168,7 +179,12 @@ def test_inference_all_null_values(feature_store):
             # "missingindicator_num": [1.0],
             "cat": [3.0],
             "bool": [-1.0],
-            "ts": [-12419.6669921875],
+            "ts.year.sin": [0.0],
+            "ts.week.sin": [0.0],
+            "ts.day.sin": [0.0],
+            "ts.year.cos": [1.0],
+            "ts.week.cos": [1.0],
+            "ts.day.cos": [1.0],
             "arr": [np.array([[0.0], [0.0]])],
         },
         index=pd.Index([1], name="id"),
