@@ -1,5 +1,14 @@
 import numpy as np
 import pandas as pd
+from onnx import TensorProto
+from onnxconverter_common import (
+    Scope,
+    Operator,
+    ModelComponentContainer,
+    FloatTensorType,
+    check_input_and_output_numbers,
+)
+from skl2onnx import update_registered_converter
 
 from sklearn.base import TransformerMixin, BaseEstimator
 
@@ -26,12 +35,12 @@ class PeriodicTransformer(TransformerMixin, BaseEstimator):
         if self.transform_ == "pandas":
             out_sin = pd.DataFrame(
                 out_sin,
-                columns=[f"{col}.{p}.sin" for p in self.periods for col in X.columns],
+                columns=[f"{col}.{p}.sin" for p in self.periods.keys() for col in X.columns],
                 index=X.index,
             )
             out_cos = pd.DataFrame(
                 out_cos,
-                columns=[f"{col}.{p}.cos" for p in self.periods for col in X.columns],
+                columns=[f"{col}.{p}.cos" for p in self.periods.keys() for col in X.columns],
                 index=X.index,
             )
             if self.keep_original:
@@ -53,4 +62,61 @@ class PeriodicTransformer(TransformerMixin, BaseEstimator):
         self.transform_ = transform
 
 
-# TODO: ONNX export
+def calculate_juniper_periodic_transformer(operator):
+    check_input_and_output_numbers(operator, input_count_range=1, output_count_range=1)
+    op = operator.raw_operator
+    dims = operator.inputs[0].type.shape
+    if len(dims) != 2:
+        raise RuntimeError("Expecting 2D input.")
+    otype = FloatTensorType([dims[0] * len(op.periods) * 2, dims[1]])  # TODO: check to ensure this is not transposed
+    operator.outputs[0].type = otype
+
+
+def convert_juniper_periodic_transformer(scope: Scope, operator: Operator, container: ModelComponentContainer):
+    op = operator.raw_operator
+    inp = operator.inputs[0]
+
+    if op.keep_original:
+        raise NotImplementedError
+
+    mul = 2 * np.pi / np.repeat(list(op.periods.values()), inp.type.shape[1]).reshape(1, -1)
+    scale_name = f"{inp.full_name}.scale"
+    container.add_initializer(scale_name, TensorProto.FLOAT, mul.shape, mul.flatten())
+
+    container.add_node(
+        op_type="Mul",
+        inputs=[inp.full_name, scale_name],
+        outputs=[f"{inp.full_name}.mul"],
+        name="Scale",
+        op_version=14,
+    )
+    container.add_node(
+        op_type="Sin",
+        inputs=[f"{inp.full_name}.mul"],
+        outputs=[f"{inp.full_name}.sin"],
+        name="Sin",
+        op_version=17,
+    )
+    container.add_node(
+        op_type="Cos",
+        inputs=[f"{inp.full_name}.mul"],
+        outputs=[f"{inp.full_name}.cos"],
+        name="Cos",
+        op_version=17,
+    )
+    container.add_node(
+        op_type="Concat",
+        inputs=[f"{inp.full_name}.sin", f"{inp.full_name}.cos"],
+        outputs=[operator.outputs[0].full_name],
+        name="Concat",
+        axis=1,
+        op_version=13,
+    )
+
+
+update_registered_converter(
+    PeriodicTransformer,
+    "JuniperPeriodicTransformer",
+    calculate_juniper_periodic_transformer,
+    convert_juniper_periodic_transformer,
+)

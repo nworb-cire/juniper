@@ -7,6 +7,7 @@ import pytest
 import torch.nn
 from onnxruntime import InferenceSession
 
+from juniper.preprocessor.periodic_transformer import PERIODS
 from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.modeling.model_wrapper import Model
 from juniper.modeling.torch import TorchModel
@@ -32,6 +33,7 @@ def test_onnx_export(feature_store, onnx_schema):
         assert model_onnx is not None
 
 
+# @pytest.mark.skip(reason="Need to fix ONNX runtime not supporting Cos")
 def test_runtime(feature_store, onnx_schema):
     column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
     df = feature_store.read_parquet()
@@ -50,7 +52,8 @@ def test_runtime(feature_store, onnx_schema):
     output = sess.run(["features", "arr"], input)
     assert output is not None
     assert len(output) == 2
-    expected = np.array([[0.0, 3.0, -1.0, 0.0]])
+    expected = np.concatenate([np.array([0.0, 3.0, -1.0]), np.repeat([0.0, 1.0], len(PERIODS))])
+    expected = np.expand_dims(expected, axis=0)
     assert np.allclose(output[0], expected)
     expected = np.array(
         [

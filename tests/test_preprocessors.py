@@ -29,19 +29,19 @@ def test_get_preprocessor(feature_store):
         (FeatureType.NUMERIC, [0.5154639, 0.0, -0.5154639, 0.0]),
         (FeatureType.CATEGORICAL, [0.0, 3.0, 1.0, 2.0]),
         (FeatureType.BOOLEAN, [1.0, 1.0, -1.0, 0.0]),
-        # (
-        #     FeatureType.TIMESTAMP,
-        #     np.array(
-        #         [
-        #             [1.08805418e-02, 2.80798422e-02, 4.52708330e-02, 6.24484269e-02],
-        #             [7.81831482e-01, 9.74927912e-01, 4.33883739e-01, -4.33883739e-01],
-        #             [-6.01205130e-12, -1.71351267e-12, 2.58502595e-12, -7.66835066e-12],
-        #             [9.99940805e-01, 9.99605683e-01, 9.98974750e-01, 9.98048192e-01],
-        #             [6.23489802e-01, -2.22520934e-01, -9.00968868e-01, -9.00968868e-01],
-        #             [1.00000000e00, 1.00000000e00, 1.00000000e00, 1.00000000e00],
-        #         ]
-        #     ),
-        # ),
+        (
+            FeatureType.TIMESTAMP,
+            np.array(
+                [
+                    [1.08877420e-02, 2.80656666e-02, 4.52962816e-02, 6.24829717e-02],
+                    [7.81866589e-01, 9.74969528e-01, 4.32745810e-01, -4.34801798e-01],
+                    [3.94154950e-04, -1.30967037e-03, 8.83824034e-03, 7.13446918e-03],
+                    [9.99940753e-01, 9.99606073e-01, 9.98973608e-01, 9.98046041e-01],
+                    [6.23445778e-01, -2.22338525e-01, -9.01515981e-01, -9.00526178e-01],
+                    [9.99999922e-01, 9.99999142e-01, 9.99960942e-01, 9.99974549e-01],
+                ]
+            ),
+        ),
     ],
 )
 def test_fit_preprocessor(feature_type, expected, feature_store):
@@ -162,7 +162,6 @@ def test_array_unusable(feature_type, expected_n_transformers, expect_arr, featu
         assert "arr" not in column_transformer.named_transformers_.keys()
 
 
-@pytest.mark.skip(reason="Timestamp ONNX export broken")
 def test_inference_all_null_values(feature_store):
     column_transformer = ColumnTransformer(feature_store)
     df = feature_store.read_parquet()
