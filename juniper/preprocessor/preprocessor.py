@@ -111,7 +111,6 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
             naming=name + "_" if name is not None else "",
             target_opset=17,
         )
-        onnx.save(model_onnx, "test_preprocessor.onnx")
         onnx.checker.check_model(model_onnx, full_check=True)
         # rename input
         for node in model_onnx.graph.input:
