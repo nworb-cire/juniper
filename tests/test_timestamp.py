@@ -1,13 +1,11 @@
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import pytest
 from onnxruntime import InferenceSession
 
 from juniper.preprocessor.preprocessor import ColumnTransformer
 
 
-@pytest.mark.skip(reason="Period transformer output is not ordered correctly")
 def test_multiple_timestamps(feature_store):
     schema = pa.schema(
         [

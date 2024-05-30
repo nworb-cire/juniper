@@ -85,11 +85,11 @@ def convert_juniper_periodic_transformer(scope: Scope, operator: Operator, conta
 
     mul = 2 * np.pi / np.array(list(op.periods.values()))
     scale_name = f"{inp.full_name}.scale"
-    container.add_initializer(scale_name, TensorProto.FLOAT, [1, 1, mul.shape[0]], mul.flatten())
+    container.add_initializer(scale_name, TensorProto.FLOAT, [1, mul.shape[0], 1], mul.flatten())
 
-    # (batch, n) -> (batch, n, 1)
+    # (batch, n) -> (batch, 1, n)
     unsqueeze_name = f"{inp.full_name}.unsqueeze_axis"
-    container.add_initializer(unsqueeze_name, TensorProto.INT64, [1], [2])
+    container.add_initializer(unsqueeze_name, TensorProto.INT64, [1], [1])
     container.add_node(
         op_type="Unsqueeze",
         inputs=[inp.full_name, unsqueeze_name],
@@ -97,7 +97,7 @@ def convert_juniper_periodic_transformer(scope: Scope, operator: Operator, conta
         name="Unsqueeze",
         op_version=13,
     )
-    # (batch, n) -> (batch, n, p)
+    # (batch, 1, n) -> (batch, p, n)
     container.add_node(
         op_type="Mul",
         inputs=[f"{inp.full_name}.unsqueeze", scale_name],
@@ -105,7 +105,7 @@ def convert_juniper_periodic_transformer(scope: Scope, operator: Operator, conta
         name="Scale",
         op_version=14,
     )
-    # (batch, n, p) -> (batch, n * p)
+    # (batch, p, n) -> (batch, p * n)
     reshape_name = f"{inp.full_name}.reshape_shape"
     container.add_initializer(
         reshape_name, TensorProto.INT64, [2], [inp.type.shape[0], inp.type.shape[1] * len(op.periods)]
