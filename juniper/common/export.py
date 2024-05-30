@@ -5,7 +5,7 @@ from datetime import datetime
 
 import onnx
 import sklearn.compose
-from onnxconverter_common import FloatTensorType, StringTensorType, TensorType
+from onnxconverter_common import FloatTensorType, StringTensorType, TensorType, Int64TensorType
 
 from juniper.common.data_type import FeatureType
 from juniper.common.setup import load_config
@@ -55,7 +55,7 @@ def feature_type_to_onnx_type(feature_type: FeatureType, arr: bool = False) -> T
             return FloatTensorType([dim, 1])
         case FeatureType.TIMESTAMP:
             # FIXME: Timestamps must be converted to unix epoch in the runner
-            return FloatTensorType([dim, 1])
+            return Int64TensorType([dim, 1])
         case _:
             raise ValueError(f"Unknown feature type {feature_type}")
 

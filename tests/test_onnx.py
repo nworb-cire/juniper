@@ -3,7 +3,6 @@ import tempfile
 import numpy as np
 import onnx
 import pandas as pd
-import pytest
 import torch.nn
 from onnxruntime import InferenceSession
 
@@ -13,13 +12,8 @@ from juniper.modeling.model_wrapper import Model
 from juniper.modeling.torch import TorchModel
 
 
-@pytest.fixture
-def onnx_schema(feature_store):
-    return feature_store.get_schema()
-
-
-def test_onnx_export(feature_store, onnx_schema):
-    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
+def test_onnx_export(feature_store):
+    column_transformer = ColumnTransformer(feature_store, schema=feature_store.get_schema())
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 
@@ -33,9 +27,8 @@ def test_onnx_export(feature_store, onnx_schema):
         assert model_onnx is not None
 
 
-# @pytest.mark.skip(reason="Need to fix ONNX runtime not supporting Cos")
-def test_runtime(feature_store, onnx_schema):
-    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
+def test_runtime(feature_store):
+    column_transformer = ColumnTransformer(feature_store, schema=feature_store.get_schema())
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 
@@ -47,6 +40,8 @@ def test_runtime(feature_store, onnx_schema):
             input[node.name] = np.array([[None, None, None]], dtype=np.float32).reshape(-1, 1)
         elif node.type == "tensor(string)":
             input[node.name] = np.array([[None]], dtype=np.str_)
+        elif node.type == "tensor(int64)":
+            input[node.name] = np.array([[0]], dtype=np.int64)
         else:
             input[node.name] = np.array([[None]], dtype=np.float32)
     output = sess.run(["features", "arr"], input)
@@ -79,8 +74,8 @@ class SimpleModel(torch.nn.Module, Model):
         return self.linear(x_)
 
 
-def test_simple_model(feature_store, onnx_schema):
-    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
+def test_simple_model(feature_store):
+    column_transformer = ColumnTransformer(feature_store, schema=feature_store.get_schema())
     df = feature_store.read_parquet()
     column_transformer.fit(df)
 

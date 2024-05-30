@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import numpy as np
 import pandas as pd
 from onnx import TensorProto
@@ -13,15 +15,17 @@ from skl2onnx import update_registered_converter
 from sklearn.base import TransformerMixin, BaseEstimator
 
 
-PERIODS = {
-    "year": 365.2425 * 24 * 60 * 60,
-    "week": 7 * 24 * 60 * 60,
-    "day": 24 * 60 * 60,
-}
+PERIODS = OrderedDict(
+    {
+        "year": 365.2425 * 24 * 60 * 60,
+        "week": 7 * 24 * 60 * 60,
+        "day": 24 * 60 * 60,
+    }
+)
 
 
 class PeriodicTransformer(TransformerMixin, BaseEstimator):
-    def __init__(self, periods: dict[str, float] = PERIODS, keep_original: bool = False):
+    def __init__(self, periods: OrderedDict[str, float] = PERIODS, keep_original: bool = False):
         self.periods = periods
         self.transform_ = "pandas"
         self.keep_original = keep_original
@@ -68,7 +72,7 @@ def calculate_juniper_periodic_transformer(operator):
     dims = operator.inputs[0].type.shape
     if len(dims) != 2:
         raise RuntimeError("Expecting 2D input.")
-    otype = FloatTensorType([dims[0] * len(op.periods) * 2, dims[1]])  # TODO: check to ensure this is not transposed
+    otype = FloatTensorType([dims[0], len(op.periods) * 2 * dims[1]])
     operator.outputs[0].type = otype
 
 
@@ -79,31 +83,55 @@ def convert_juniper_periodic_transformer(scope: Scope, operator: Operator, conta
     if op.keep_original:
         raise NotImplementedError
 
-    mul = 2 * np.pi / np.repeat(list(op.periods.values()), inp.type.shape[1]).reshape(1, -1)
+    mul = 2 * np.pi / np.array(list(op.periods.values()))
     scale_name = f"{inp.full_name}.scale"
-    container.add_initializer(scale_name, TensorProto.FLOAT, mul.shape, mul.flatten())
+    container.add_initializer(scale_name, TensorProto.FLOAT, [1, 1, mul.shape[0]], mul.flatten())
 
+    # (batch, n) -> (batch, n, 1)
+    unsqueeze_name = f"{inp.full_name}.unsqueeze_axis"
+    container.add_initializer(unsqueeze_name, TensorProto.INT64, [1], [2])
+    container.add_node(
+        op_type="Unsqueeze",
+        inputs=[inp.full_name, unsqueeze_name],
+        outputs=[f"{inp.full_name}.unsqueeze"],
+        name="Unsqueeze",
+        op_version=13,
+    )
+    # (batch, n) -> (batch, n, p)
     container.add_node(
         op_type="Mul",
-        inputs=[inp.full_name, scale_name],
+        inputs=[f"{inp.full_name}.unsqueeze", scale_name],
         outputs=[f"{inp.full_name}.mul"],
         name="Scale",
         op_version=14,
     )
+    # (batch, n, p) -> (batch, n * p)
+    reshape_name = f"{inp.full_name}.reshape_shape"
+    container.add_initializer(
+        reshape_name, TensorProto.INT64, [2], [inp.type.shape[0], inp.type.shape[1] * len(op.periods)]
+    )
+    container.add_node(
+        op_type="Reshape",
+        inputs=[f"{inp.full_name}.mul", reshape_name],
+        outputs=[f"{inp.full_name}.reshape"],
+        name="Reshape",
+        op_version=14,
+    )
     container.add_node(
         op_type="Sin",
-        inputs=[f"{inp.full_name}.mul"],
+        inputs=[f"{inp.full_name}.reshape"],
         outputs=[f"{inp.full_name}.sin"],
         name="Sin",
         op_version=17,
     )
     container.add_node(
         op_type="Cos",
-        inputs=[f"{inp.full_name}.mul"],
+        inputs=[f"{inp.full_name}.reshape"],
         outputs=[f"{inp.full_name}.cos"],
         name="Cos",
         op_version=17,
     )
+    # 2 * (batch, n * p) -> (batch, n * p * 2)
     container.add_node(
         op_type="Concat",
         inputs=[f"{inp.full_name}.sin", f"{inp.full_name}.cos"],
