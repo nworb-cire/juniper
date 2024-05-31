@@ -14,10 +14,11 @@ class BaseDataSource(ABC):
     timestamp_column: str
     config_location: str
 
-    def __init__(self):
+    def __init__(self, columns: list[str] | None = None):
         config = load_config()
         self.index_column = config["data_sources"]["index_column"]
         self.timestamp_column = config["data_sources"][self.config_location]["timestamp_column"]
+        self.columns = columns
         self.metadata = self.get_metadata()
 
     @abstractmethod
@@ -82,6 +83,8 @@ class LocalDataSource(ParquetDataSource, ABC):
     ) -> pd.DataFrame:
         if path is None:
             path = self.path
+        if columns is None and self.columns is not None:
+            columns = self.columns
         if columns is not None and self.index_column not in columns:
             columns.append(self.index_column)
         df = pd.read_parquet(path, columns=columns, filters=filters)
@@ -104,8 +107,11 @@ class S3ParquetDataSource(ParquetDataSource, ABC):
         columns: list[str] | None = None,
         filters: list[tuple] | list[list[tuple]] | None = None,
     ) -> pd.DataFrame:
+        # TODO: keep this DRY
         if path is None:
             path = self.path
+        if columns is None and self.columns is not None:
+            columns = self.columns
         if columns is not None and self.index_column not in columns:
             columns.append(self.index_column)
         config = load_config()

@@ -18,12 +18,12 @@ class BaseOutcomes(BaseDataSource, ABC):
     config_location = "outcomes"
     metadata: pd.Series
 
-    def __init__(self, path: S3Path | None = None):
+    def __init__(self, path: S3Path | None = None, **kwargs):
         config = load_config()
         if path is None:
             path = config["data_sources"]["outcomes"]["location"]
         self.path = path
-        super().__init__()
+        super().__init__(**kwargs)
 
     @abstractmethod
     def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: pd.Timestamp):
@@ -90,7 +90,10 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
 
     def _get_columns(self, columns: list[str] | None = None) -> list[str]:
         if columns is None:
-            columns = self.all_columns
+            if self.columns is not None:
+                columns = self.columns
+            else:
+                columns = self.all_columns
         return [c for c in columns if c.startswith(self.binary_outcomes_list) and re.match(r"\w+_\d{1,4}$", c)]
 
     def filter_training_outcomes(self, df: pd.DataFrame, train_time_end: pd.Timestamp):
@@ -117,16 +120,17 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         train = self.filter_training_outcomes(train, train_time_end).drop(columns=[self.timestamp_column])
         if test_idx is not None:
             filters = ~ds.field(self.index_column).is_null() & pc.is_in(ds.field(self.index_column), pa.array(test_idx))
-            test = self.read_parquet(filters=filters, columns=self._get_columns() + [self.timestamp_column])
+            test = self.read_parquet(filters=filters, columns=self._get_columns() + [self.timestamp_column]).drop(
+                columns=[self.timestamp_column]
+            )
         else:
             test = None
         return train, test
 
     def get_metadata(self) -> pd.Series:
         self.all_columns = pq.read_schema(self.path).names
-        df = self.read_parquet()
         columns = self._get_columns()
-        df = df[columns + [self.timestamp_column]]
+        df = self.read_parquet(columns=[*columns, self.timestamp_column])
         df = df.dropna(subset=columns, how="all")
         df = df[self.timestamp_column]
         df = df.dropna()
