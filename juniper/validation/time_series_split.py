@@ -7,13 +7,16 @@ from juniper.data_loading.feature_store import BaseFeatureStore
 from juniper.data_loading.outcomes import BaseOutcomes
 
 
+DEFAULT_HOLDOUT_TIME = pd.Timedelta(days=150)
+
+
 class TimeSeriesSplit:
     def __init__(
         self,
         timedelta: pd.Timedelta,
         n_splits: int,
         gap_days: int = 0,
-        holdout_time: int = 150,
+        holdout_time: pd.Timedelta = DEFAULT_HOLDOUT_TIME,
         include_last: bool = False,
     ):
         if n_splits <= 0:
@@ -51,7 +54,7 @@ class TimeSeriesSplit:
 
         for i in range(self.n_splits):
             holdout_time_end = end_ts - (self.n_splits - i - 1) * self.timedelta
-            holdout_time_begin = holdout_time_end - pd.Timedelta(days=self.holdout_time)
+            holdout_time_begin = holdout_time_end - self.holdout_time
             train_time_end = holdout_time_begin - pd.Timedelta(days=self.gap)
             train_idx = ts[ts <= train_time_end].index
             test_idx = ts[(ts > holdout_time_begin) & (ts <= holdout_time_end)].index
