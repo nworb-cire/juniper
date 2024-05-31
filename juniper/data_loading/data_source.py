@@ -36,15 +36,20 @@ class BaseDataSource(ABC):
         train_idx: pd.Index | None = None,
         test_idx: pd.Index | None = None,
         train_time_end: pd.Timestamp | None = None,
+        holdout_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         pass
 
     def load_train_test(
-        self, train_idx: pd.Index, test_idx: pd.Index | None = None, train_time_end: pd.Timestamp | None = None
+        self,
+        train_idx: pd.Index,
+        test_idx: pd.Index | None = None,
+        train_time_end: pd.Timestamp | None = None,
+        holdout_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         logging.info(f"Loading {self.__class__.__name__} from {self._path_str}")
         t = time.monotonic()
-        ret = self._load_train_test(train_idx, test_idx, train_time_end)
+        ret = self._load_train_test(train_idx, test_idx, train_time_end, holdout_time_end)
         logging.info(f"Loaded {self.__class__.__name__} in {time.monotonic() - t:.3f} seconds")
         msg = f"  Train size: {len(ret[0])}"
         if ret[1] is not None:

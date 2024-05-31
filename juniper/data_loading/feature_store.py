@@ -49,6 +49,7 @@ class BaseParquetFeatureStore(BaseFeatureStore, ParquetDataSource, ABC):
         train_idx: pd.Index | None = None,
         test_idx: pd.Index | None = None,
         train_time_end: pd.Timestamp | None = None,
+        holdout_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         filters = ~ds.field(self.index_column).is_null()
         if train_idx is not None:

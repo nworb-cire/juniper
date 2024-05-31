@@ -53,6 +53,7 @@ class BasePivotedOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         train_idx: pd.Index | None = None,
         test_idx: pd.Index | None = None,
         train_time_end: pd.Timestamp | None = None,
+        holdout_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         config = load_config()
         outcomes_columns = config["data_sources"]["outcomes"]["binary_outcomes_list"]
@@ -112,6 +113,7 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         train_idx: pd.Index | None = None,
         test_idx: pd.Index | None = None,
         train_time_end: pd.Timestamp | None = None,
+        holdout_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         filters = ~ds.field(self.index_column).is_null()
         if train_idx is not None:
@@ -121,9 +123,8 @@ class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
         train = train.dropna(how="all")
         if test_idx is not None:
             filters = ~ds.field(self.index_column).is_null() & pc.is_in(ds.field(self.index_column), pa.array(test_idx))
-            test = self.read_parquet(filters=filters, columns=self._get_columns() + [self.timestamp_column]).drop(
-                columns=[self.timestamp_column]
-            )
+            test = self.read_parquet(filters=filters, columns=self._get_columns() + [self.timestamp_column])
+            test = self.filter_training_outcomes(test, holdout_time_end).drop(columns=[self.timestamp_column])
             test = test.dropna(how="all")
         else:
             test = None

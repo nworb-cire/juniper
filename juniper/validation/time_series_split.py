@@ -22,16 +22,16 @@ class TimeSeriesSplit:
         """
         Perform a time series cross validation split on a dataset. The dataset is split into n_splits, with each split
         having a holdout time of holdout_time. The gap_days parameter specifies the number of days between the end of
-        the training set and the beginning of the holdout set. 
-        
+        the training set and the beginning of the holdout set.
+
         Example: (n_splits=3, holdout_time=3, gap_days=1, timedelta=1, include_last=False)
         Split 1: TTT HHH
         Split 2: TTTT HHH
         Split 3: TTTTT HHH
-        
+
         :param timedelta: Amount of time to advance the holdout window each split.
-        :param n_splits: How many splits to perform. 
-        :param gap_days: Amount of time to wait between the end of the training set and the beginning of the holdout set.
+        :param n_splits: How many splits to perform.
+        :param gap_days: Amount of time to wait between the end of the training set and the beginning of the holdout.
         :param holdout_time: Duration of the holdout set.
         :param include_last: If True, the final training set will include the entire dataset with an empty holdout set.
         """
@@ -49,7 +49,7 @@ class TimeSeriesSplit:
         features: BaseFeatureStore | None = None,
         outcomes: BaseOutcomes | None = None,
         end_ts: pd.Timestamp | None = None,
-    ) -> Generator[tuple[pd.Index, pd.Index, pd.Timestamp], None, None]:
+    ) -> Generator[tuple[pd.Index, pd.Index, pd.Timestamp, pd.Timestamp], None, None]:
         if features is None and outcomes is None:
             raise ValueError("Either features or outcomes must be provided")
         elif features is None:
@@ -77,9 +77,9 @@ class TimeSeriesSplit:
             logging.info("#" * 10 + f" Time Series CV Split #{i+1}/{self.n_splits} " + "#" * 10)
             logging.info(f"-----> {train_time_end} | {holdout_time_begin} <---> {holdout_time_end}")
             logging.info(f" Train size: {len(train_idx)}, val size: {len(test_idx)}")
-            yield train_idx, test_idx, train_time_end
+            yield train_idx, test_idx, train_time_end, holdout_time_end
         if self.include_last:
-            yield ts.index, pd.Index([]), end_ts
+            yield ts.index, pd.Index([]), end_ts, end_ts
 
     # def add_score(self, score):
     #     # TODO: Integrate metric logging with an experiment tracking system
