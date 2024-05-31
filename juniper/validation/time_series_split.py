@@ -19,6 +19,22 @@ class TimeSeriesSplit:
         holdout_time: pd.Timedelta = DEFAULT_HOLDOUT_TIME,
         include_last: bool = False,
     ):
+        """
+        Perform a time series cross validation split on a dataset. The dataset is split into n_splits, with each split
+        having a holdout time of holdout_time. The gap_days parameter specifies the number of days between the end of
+        the training set and the beginning of the holdout set. 
+        
+        Example: (n_splits=3, holdout_time=3, gap_days=1, timedelta=1, include_last=False)
+        Split 1: TTT HHH
+        Split 2: TTTT HHH
+        Split 3: TTTTT HHH
+        
+        :param timedelta: Amount of time to advance the holdout window each split.
+        :param n_splits: How many splits to perform. 
+        :param gap_days: Amount of time to wait between the end of the training set and the beginning of the holdout set.
+        :param holdout_time: Duration of the holdout set.
+        :param include_last: If True, the final training set will include the entire dataset with an empty holdout set.
+        """
         if n_splits <= 0:
             raise ValueError("n_splits must be a positive integer")
         self.timedelta = timedelta
