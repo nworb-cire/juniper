@@ -1,11 +1,12 @@
 import logging
 from collections.abc import Generator
 
+import optuna
 import pandas as pd
 
 from juniper.data_loading.feature_store import BaseFeatureStore
 from juniper.data_loading.outcomes import BaseOutcomes
-
+from juniper.modeling.metrics import EvalMetrics, SingleOutcomeEvalMetrics
 
 DEFAULT_HOLDOUT_TIME = pd.Timedelta(days=150)
 
@@ -18,6 +19,7 @@ class TimeSeriesSplit:
         gap_days: int = 0,
         holdout_time: pd.Timedelta = DEFAULT_HOLDOUT_TIME,
         include_last: bool = False,
+        trial: optuna.Trial | None = None,
     ):
         """
         Perform a time series cross validation split on a dataset. The dataset is split into n_splits, with each split
@@ -34,6 +36,7 @@ class TimeSeriesSplit:
         :param gap_days: Amount of time to wait between the end of the training set and the beginning of the holdout.
         :param holdout_time: Duration of the holdout set.
         :param include_last: If True, the final training set will include the entire dataset with an empty holdout set.
+        :param trial: If provided, the trial object will be used to report metrics.
         """
         if n_splits <= 0:
             raise ValueError("n_splits must be a positive integer")
@@ -41,8 +44,9 @@ class TimeSeriesSplit:
         self.include_last = include_last
         self.n_splits = n_splits if not include_last else n_splits - 1
         self.gap = gap_days
-        # self.scores = []
         self.holdout_time = holdout_time
+        self.trial = trial
+        self.metrics: list[EvalMetrics] = []
 
     def split(
         self,
@@ -81,6 +85,8 @@ class TimeSeriesSplit:
         if self.include_last:
             yield ts.index, pd.Index([]), end_ts, end_ts
 
-    # def add_score(self, score):
-    #     # TODO: Integrate metric logging with an experiment tracking system
-    #     self.scores.append(score)
+    def report(self, metrics: dict[str, SingleOutcomeEvalMetrics], outcome: str) -> None:
+        epoch = len(self.metrics) + 1
+        self.metrics.append(EvalMetrics(epoch=epoch, metrics=metrics))
+        if self.trial is not None:
+            self.trial.report(metrics[outcome].log_loss, epoch)  # TODO: make this configurable
