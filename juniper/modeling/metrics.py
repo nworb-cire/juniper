@@ -7,8 +7,8 @@ from sklearn.metrics import roc_auc_score, log_loss
 
 @dataclass(frozen=True, kw_only=True)
 class SingleOutcomeEvalMetrics:
-    roc_auc: float
-    log_loss: float
+    roc_auc: float = float("nan")
+    log_loss: float = float("nan")
 
 
 @dataclass(frozen=True, kw_only=True)
