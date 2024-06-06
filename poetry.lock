@@ -2580,6 +2580,21 @@ packaging = "*"
 protobuf = "*"
 
 [[package]]
+name = "onnxmltools"
+version = "1.12.0"
+description = "Converts Machine Learning models to ONNX"
+optional = false
+python-versions = "*"
+files = [
+    {file = "onnxmltools-1.12.0-py2.py3-none-any.whl", hash = "sha256:c51608ead3806a50f2cd70d466ee46c6e71a3f315ac629b0dffaa1081206a66c"},
+    {file = "onnxmltools-1.12.0.tar.gz", hash = "sha256:ebdc529a78ce79c4be767cd6535544f983fe9dc0ca10f434194086f1c5be64d1"},
+]
+
+[package.dependencies]
+numpy = "*"
+onnx = "*"
+
+[[package]]
 name = "onnxruntime"
 version = "1.18.0"
 description = "ONNX Runtime is a runtime accelerator for Machine Learning models"
@@ -4483,4 +4498,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "bd3e222151c970c7f960441733e77a19e87b892e6f0c08d70f6b64e7c6377fc6"
+content-hash = "247836eb1dc27c4b2dc8625aae8f3debd6bfdc44123689a602cf96b98cb74b85"
