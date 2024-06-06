@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 import pandas as pd
+from pyarrow import compute as pc
 from s3path import S3Path
 
 from juniper.common.setup import load_config
@@ -70,7 +71,7 @@ class ParquetDataSource(BaseDataSource, ABC):
         self,
         path: Path | None = None,
         columns: list[str] | None = None,
-        filters: list[tuple] | list[list[tuple]] | None = None,
+        filters: list[tuple] | list[list[tuple]] | pc.Expression | None = None,
     ) -> pd.DataFrame:
         pass
 
@@ -84,7 +85,7 @@ class LocalDataSource(ParquetDataSource, ABC):
         self,
         path: Path | None = None,
         columns: list[str] | None = None,
-        filters: list[tuple] | list[list[tuple]] | None = None,
+        filters: list[tuple] | list[list[tuple]] | pc.Expression | None = None,
     ) -> pd.DataFrame:
         if path is None:
             path = self.path
@@ -110,7 +111,7 @@ class S3ParquetDataSource(ParquetDataSource, ABC):
         self,
         path: S3Path | None = None,
         columns: list[str] | None = None,
-        filters: list[tuple] | list[list[tuple]] | None = None,
+        filters: list[tuple] | list[list[tuple]] | pc.Expression | None = None,
     ) -> pd.DataFrame:
         # TODO: keep this DRY
         if path is None:
