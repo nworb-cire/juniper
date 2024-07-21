@@ -1,8 +1,5 @@
-import os
-
 import pytest
 
-from juniper.data_loading.feature_store import LocalParquetFeatureStore
 from juniper.data_loading.outcomes import LocalStandardOutcomes
 
 
