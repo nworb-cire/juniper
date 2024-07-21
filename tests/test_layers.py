@@ -14,10 +14,9 @@ def onnx_schema(feature_store):
     return pa.schema([field for field in schema if field.metadata[b"usable_type"].decode() != FeatureType.TIMESTAMP])
 
 
-def test_unify(feature_store, onnx_schema):
-    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
-    df = feature_store.read_parquet()
-    x = column_transformer.fit_transform(df)
+def test_unify(onnx_schema, data):
+    column_transformer = ColumnTransformer(schema=onnx_schema)
+    x = column_transformer.fit_transform(data)
     unify = Unify({"arr": SummaryPool()})
     y = unify(x)
     assert isinstance(y, torch.Tensor)

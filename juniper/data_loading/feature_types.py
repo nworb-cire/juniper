@@ -5,15 +5,22 @@ import pyarrow as pa
 from juniper.common.data_type import FeatureType
 
 
-def get_feature_types(self, schema: pa.Schema) -> dict[FeatureType, list[str]]:
+def get_feature_types(
+    schema: pa.Schema,
+    enabled_feature_types: list[FeatureType] | None = None,
+    override_unusable_features: tuple[str] = (),
+) -> dict[FeatureType, list[str]]:
+    if enabled_feature_types is None:
+        enabled_feature_types = list(FeatureType)
+
     columns = defaultdict(list)
 
     for i in range(len(schema)):
         field = schema.field(i)
-        if field.name.startswith(self.override_unusable_features):  # TODO: glob
+        if field.name.startswith(override_unusable_features):  # TODO: glob
             columns[FeatureType.UNUSABLE].append(field.name)
         elif isinstance(field.type, pa.lib.ListType):
-            if FeatureType.ARRAY in self.enabled_feature_types:
+            if FeatureType.ARRAY in enabled_feature_types:
                 columns[FeatureType.ARRAY].append(field.name)
 
     # Some nested array fields may appear in the schema
@@ -34,19 +41,19 @@ def get_feature_types(self, schema: pa.Schema) -> dict[FeatureType, list[str]]:
             continue
         match field.metadata[b"usable_type"].decode():
             case FeatureType.NUMERIC:
-                if FeatureType.BOOLEAN in self.enabled_feature_types and field.type == pa.bool_():
+                if FeatureType.BOOLEAN in enabled_feature_types and field.type == pa.bool_():
                     columns[FeatureType.BOOLEAN].append(field.name)
                 else:
-                    if FeatureType.NUMERIC in self.enabled_feature_types:
+                    if FeatureType.NUMERIC in enabled_feature_types:
                         columns[FeatureType.NUMERIC].append(field.name)
             case FeatureType.CATEGORICAL:
-                if FeatureType.CATEGORICAL in self.enabled_feature_types:
+                if FeatureType.CATEGORICAL in enabled_feature_types:
                     columns[FeatureType.CATEGORICAL].append(field.name)
             case FeatureType.BOOLEAN:
-                if FeatureType.BOOLEAN in self.enabled_feature_types:
+                if FeatureType.BOOLEAN in enabled_feature_types:
                     columns[FeatureType.BOOLEAN].append(field.name)
             case FeatureType.TIMESTAMP:
-                if FeatureType.TIMESTAMP in self.enabled_feature_types:
+                if FeatureType.TIMESTAMP in enabled_feature_types:
                     columns[FeatureType.TIMESTAMP].append(field.name)
             case _:
                 columns[FeatureType.UNUSABLE].append(field.name)

@@ -16,14 +16,14 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         self,
         field: pa.Field,
         preprocessor_factory: Callable,
-        override_unusable_features: list[str] | None = None,
+        override_unusable_features: tuple[str] = (),
         enabled_feature_types: list[FeatureType] | None = None,
     ):
         self.field = field
         self.preprocessor_factory = preprocessor_factory
         self.record_path = field.metadata.get(b"record_path", None)
-        self.meta = field.metadata.get(b"meta", None)
-        self.override_unusable_features = override_unusable_features or []
+        self.meta = field.metadata.get(b"meta", [])
+        self.override_unusable_features = override_unusable_features
         self.enabled_feature_types = enabled_feature_types or list(FeatureType)
 
         if self.record_path is None:
@@ -37,9 +37,9 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         remove_list = []
         for field in schema_out:
             if (
-                not field.name.startswith((self.record_prefix, *[f"{self.meta_prefix}{m}" for m in meta or []]))
-                or field.metadata.get(b"usable_type", b"").decode() not in enabled_feature_types
-                or field.name.startswith(override_unusable_features)
+                not field.name.startswith((self.record_prefix, *[f"{self.meta_prefix}{m}" for m in self.meta]))
+                or field.metadata.get(b"usable_type", b"").decode() not in self.enabled_feature_types
+                or field.name.startswith(self.override_unusable_features)
             ):
                 logging.debug(f"Removing field {field.name}")
                 remove_list.append(field.name)

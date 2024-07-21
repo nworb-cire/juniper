@@ -6,7 +6,7 @@ from pyarrow import parquet as pq
 
 @pytest.fixture
 def data_path() -> str:
-    return "tests/data/feature_store.parquet"
+    return "data/feature_store.parquet"
 
 
 @pytest.fixture

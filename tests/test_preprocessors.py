@@ -7,6 +7,7 @@ import pytest
 
 from juniper.common import schema_tools
 from juniper.common.data_type import FeatureType
+from juniper.data_loading.feature_types import get_feature_types
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.preprocessor import ColumnTransformer
 

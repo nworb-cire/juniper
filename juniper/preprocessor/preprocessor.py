@@ -10,6 +10,7 @@ from sklearn.pipeline import Pipeline
 from juniper.common.component import ModelComponent
 from juniper.common.data_type import FeatureType
 from juniper.common.export import get_onnx_types, merge_models
+from juniper.data_loading.feature_types import get_feature_types
 from juniper.modeling.metrics import EvalMetrics
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.pipelines import (
