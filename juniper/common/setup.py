@@ -28,26 +28,3 @@ def load_config() -> dict:
         else:
             config["data_sources"][source]["location"] = project_root() / config["data_sources"][source]["location"]
     return config
-
-
-def init_logging(config):
-    logging.basicConfig(level=logging.INFO)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-
-
-def init_minio(config):
-    minio_resource = boto3.resource(
-        "s3",
-        endpoint_url=config["minio"]["endpoint_url"],
-        aws_access_key_id=config["minio"]["aws_access_key_id"],
-        aws_secret_access_key=config["minio"]["aws_secret_access_key"],
-    )
-    register_configuration_parameter(PureS3Path("/"), resource=minio_resource)
-
-
-def init_services():
-    config = load_config()
-
-    init_logging(config)
-    if "minio" in config:
-        init_minio(config)
