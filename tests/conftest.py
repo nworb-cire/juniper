@@ -13,7 +13,7 @@ from juniper.common.data_type import FeatureType
 def data_path() -> str:
     # path of current file
     current_filepath = Path(os.path.abspath(__file__))
-    return (current_filepath.parent / "data/feature_store.parquet").absolute().as_posix()
+    return (current_filepath.parent / "data/test_data.parquet").absolute().as_posix()
 
 
 @pytest.fixture
