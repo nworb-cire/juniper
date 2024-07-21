@@ -70,7 +70,7 @@ def test_normalize_array(schema, data):
             "arr.a": [1.0, 3.0, 5.0, 7.0, 9.0],
             "arr.b": [2.0, 4.0, 6.0, 8.0, 10.0],
         },
-        index=pd.Index([1, 1, 4, 4, 4], name="id"),
+        index=pd.Index([0, 0, 3, 3, 3], name="id"),
     )
     pd.testing.assert_frame_equal(Xt.astype(float), expected.astype(float))
 
@@ -93,7 +93,7 @@ def test_fit_array_preprocessor(schema, data):
                 ),
             ],
         },
-        index=pd.Index([1, 2, 3, 4], name="id"),
+        index=pd.Index([0, 1, 2, 3], name="id"),
     )
     pd.testing.assert_frame_equal(Xt, expected)
 
@@ -166,7 +166,7 @@ def test_inference_all_null_values(schema, data):
             "ts": [-12419.6669921875],
             "arr": [np.array([[0.0], [0.0]])],
         },
-        index=pd.Index([1], name="id"),
+        index=pd.Index([0], name="id"),
     )
 
     pd.testing.assert_frame_equal(Xt, expected, check_dtype=False)

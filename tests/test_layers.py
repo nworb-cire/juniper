@@ -7,11 +7,6 @@ from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.modeling.layers import Unify, SummaryPool
 
 
-@pytest.fixture
-def onnx_schema(feature_store):
-    """Remove certain column types from the schema until they are ready to be supported"""
-    schema = feature_store.get_schema()
-    return pa.schema([field for field in schema if field.metadata[b"usable_type"].decode() != FeatureType.TIMESTAMP])
 
 
 def test_unify(onnx_schema, data):

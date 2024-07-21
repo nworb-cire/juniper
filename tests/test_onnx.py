@@ -14,12 +14,6 @@ from juniper.modeling.model_wrapper import Model
 from juniper.modeling.torch import TorchModel
 
 
-@pytest.fixture
-def onnx_schema(schema):
-    """Remove certain column types from the schema until they are ready to be supported"""
-    return pa.schema([field for field in schema if field.metadata[b"usable_type"].decode() != FeatureType.TIMESTAMP])
-
-
 def test_onnx_export(onnx_schema, data):
     column_transformer = ColumnTransformer(schema=onnx_schema)
     column_transformer.fit(data)
