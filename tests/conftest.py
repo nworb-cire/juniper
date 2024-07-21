@@ -18,7 +18,9 @@ def data_path() -> str:
 
 @pytest.fixture
 def data(data_path: str) -> pd.DataFrame:
-    return pd.read_parquet(data_path)
+    df = pd.read_parquet(data_path)
+    df.set_index("id", inplace=True)
+    return df
 
 
 @pytest.fixture
