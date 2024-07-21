@@ -1,18 +1,19 @@
+import pandas as pd
+import pyarrow as pa
 import pytest
-
-from juniper.data_loading.outcomes import LocalStandardOutcomes
-
-
-@pytest.fixture
-def feature_store():
-    return LocalParquetFeatureStore()
-
-
-class TestOutcomes(LocalStandardOutcomes):
-    def _get_columns(self, columns: list[str] | None = None) -> list[str]:
-        return list(self.binary_outcomes_list)
+from pyarrow import parquet as pq
 
 
 @pytest.fixture
-def outcomes(config):
-    return TestOutcomes()
+def data_path() -> str:
+    return "tests/data/feature_store.parquet"
+
+
+@pytest.fixture
+def data(data_path: str) -> pd.DataFrame:
+    return pd.read_parquet(data_path)
+
+
+@pytest.fixture
+def schema(data_path: str) -> pa.Schema:
+    return pq.read_schema(data_path)

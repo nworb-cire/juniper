@@ -15,16 +15,14 @@ from juniper.modeling.torch import TorchModel
 
 
 @pytest.fixture
-def onnx_schema(feature_store):
+def onnx_schema(schema):
     """Remove certain column types from the schema until they are ready to be supported"""
-    schema = feature_store.get_schema()
     return pa.schema([field for field in schema if field.metadata[b"usable_type"].decode() != FeatureType.TIMESTAMP])
 
 
-def test_onnx_export(feature_store, onnx_schema):
-    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
-    df = feature_store.read_parquet()
-    column_transformer.fit(df)
+def test_onnx_export(onnx_schema, data):
+    column_transformer = ColumnTransformer(schema=onnx_schema)
+    column_transformer.fit(data)
 
     model_onnx = column_transformer.to_onnx()
     assert model_onnx is not None
@@ -36,10 +34,9 @@ def test_onnx_export(feature_store, onnx_schema):
         assert model_onnx is not None
 
 
-def test_runtime(feature_store, onnx_schema):
-    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
-    df = feature_store.read_parquet()
-    column_transformer.fit(df)
+def test_runtime(onnx_schema, data):
+    column_transformer = ColumnTransformer(schema=onnx_schema)
+    column_transformer.fit(data)
 
     model_onnx = column_transformer.to_onnx()
     sess = InferenceSession(model_onnx.SerializeToString())
@@ -80,10 +77,9 @@ class SimpleModel(torch.nn.Module, Model):
         return self.linear(x_)
 
 
-def test_simple_model(feature_store, onnx_schema):
-    column_transformer = ColumnTransformer(feature_store, schema=onnx_schema)
-    df = feature_store.read_parquet()
-    column_transformer.fit(df)
+def test_simple_model(onnx_schema, data):
+    column_transformer = ColumnTransformer(schema=onnx_schema)
+    column_transformer.fit(data)
 
     model = TorchModel(
         model_cls=SimpleModel,

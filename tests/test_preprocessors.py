@@ -11,8 +11,8 @@ from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.preprocessor import ColumnTransformer
 
 
-def test_get_preprocessor(feature_store):
-    preprocessor = ColumnTransformer(feature_store)
+def test_get_preprocessor(schema):
+    preprocessor = ColumnTransformer(schema)
     assert preprocessor is not None
     assert isinstance(preprocessor, ColumnTransformer)
     assert len(preprocessor.transformers) == 5
@@ -33,36 +33,33 @@ def test_get_preprocessor(feature_store):
         (FeatureType.TIMESTAMP, [-1.0, -1 / 3, 1 / 3, 1.0]),
     ],
 )
-def test_fit_preprocessor(feature_type, expected, feature_store):
-    column_transformer = ColumnTransformer(feature_store)
+def test_fit_preprocessor(feature_type, expected, schema, data):
+    column_transformer = ColumnTransformer(schema)
     name, preprocessor, columns = next(filter(lambda x: x[0] == feature_type, column_transformer.transformers))
     assert name == feature_type
     assert preprocessor is not None
-    df = feature_store.read_parquet()
-    Xt = preprocessor.fit_transform(df[columns])
+    Xt = preprocessor.fit_transform(data[columns])
     assert isinstance(Xt, pd.DataFrame)
     assert np.allclose(Xt.values.T, expected)
 
 
-def test_get_array_metadata(feature_store):
-    field = feature_store.schema.field("arr")
-    cn = ColumnNormalizer(
-        field=field, preprocessor_factory=partial(ColumnTransformer, feature_store=feature_store, prefix="arr.")
-    )
+def test_get_array_metadata(schema):
+    field = schema.field("arr")
+    cn = ColumnNormalizer(field=field, preprocessor_factory=partial(ColumnTransformer, schema=schema, prefix="arr."))
     assert cn.schema_out is not None
-    metadata = feature_store.get_feature_types(cn.schema_out)
+    metadata = get_feature_types(cn.schema_out)
     assert metadata is not None
     assert dict(metadata) == {
         FeatureType.NUMERIC: ["arr.a", "arr.b"],
     }
 
 
-def test_normalize_array(feature_store):
-    df = feature_store.read_parquet()[["arr"]]
+def test_normalize_array(schema, data):
+    df = data[["arr"]]
     assert df is not None
     cn = ColumnNormalizer(
-        field=feature_store.schema.field("arr"),
-        preprocessor_factory=partial(ColumnTransformer, feature_store=feature_store, prefix="arr."),
+        field=schema.field("arr"),
+        preprocessor_factory=partial(ColumnTransformer, schema=schema, prefix="arr."),
     )
     Xt = cn._transform(df)
     assert Xt is not None
@@ -77,13 +74,12 @@ def test_normalize_array(feature_store):
     pd.testing.assert_frame_equal(Xt.astype(float), expected.astype(float))
 
 
-def test_fit_array_preprocessor(feature_store):
-    column_transformer = ColumnTransformer(feature_store)
+def test_fit_array_preprocessor(schema, data):
+    column_transformer = ColumnTransformer(schema)
     name, preprocessor, columns = next(filter(lambda x: x[0] == "arr", column_transformer.transformers))
     assert name == "arr"
     assert preprocessor is not None
-    df = feature_store.read_parquet()
-    Xt = preprocessor.fit_transform(df[columns])
+    Xt = preprocessor.fit_transform(data[columns])
     assert isinstance(Xt, pd.DataFrame)
     expected = pd.DataFrame(
         {
@@ -101,8 +97,8 @@ def test_fit_array_preprocessor(feature_store):
     pd.testing.assert_frame_equal(Xt, expected)
 
 
-def test_array_field_schema(feature_store):
-    field = feature_store.schema.field("arr")
+def test_array_field_schema(schema):
+    field = schema.field("arr")
     schema = schema_tools.get_field_schema(field)
     expected = pa.schema(
         [
@@ -131,15 +127,14 @@ def test_array_field_schema(feature_store):
         (FeatureType.UNUSABLE, 4, False),
     ],
 )
-def test_array_unusable(feature_type, expected_n_transformers, expect_arr, feature_store):
-    field = feature_store.schema.field("arr")
-    schema = pa.schema(
-        [feature_store.schema.field(name) for name in feature_store.schema.names if name != field.name]
-    ).append(field.with_metadata({"usable_type": f'[{{"a": "{feature_type}", "b": "{FeatureType.UNUSABLE}"}}]'}))
-    column_transformer = ColumnTransformer(feature_store, schema)
+def test_array_unusable(feature_type, expected_n_transformers, expect_arr, schema, data):
+    field = schema.field("arr")
+    schema = pa.schema([schema.field(name) for name in schema.names if name != field.name]).append(
+        field.with_metadata({"usable_type": f'[{{"a": "{feature_type}", "b": "{FeatureType.UNUSABLE}"}}]'})
+    )
+    column_transformer = ColumnTransformer(schema)
     assert len(column_transformer.transformers) == expected_n_transformers
-    df = feature_store.read_parquet()
-    Xt = column_transformer.fit_transform(df)
+    Xt = column_transformer.fit_transform(data)
     assert Xt is not None
     assert FeatureType.NUMERIC in column_transformer.named_transformers_.keys()
     assert FeatureType.CATEGORICAL in column_transformer.named_transformers_.keys()
@@ -151,13 +146,12 @@ def test_array_unusable(feature_type, expected_n_transformers, expect_arr, featu
         assert "arr" not in column_transformer.named_transformers_.keys()
 
 
-def test_inference_all_null_values(feature_store):
-    column_transformer = ColumnTransformer(feature_store)
-    df = feature_store.read_parquet()
-    column_transformer.fit(df)
+def test_inference_all_null_values(schema, data):
+    column_transformer = ColumnTransformer(schema)
+    column_transformer.fit(data)
 
     # create empty dataframe
-    dat = df.head(1)
+    dat = data.head(1)
     dat = dat.apply(lambda x: [None] * len(x))
     assert all(pd.isna(dat))
     Xt = column_transformer.transform(dat)

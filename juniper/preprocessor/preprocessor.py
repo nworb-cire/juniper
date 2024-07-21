@@ -10,7 +10,6 @@ from sklearn.pipeline import Pipeline
 from juniper.common.component import ModelComponent
 from juniper.common.data_type import FeatureType
 from juniper.common.export import get_onnx_types, merge_models
-from juniper.data_loading.feature_store import BaseFeatureStore
 from juniper.modeling.metrics import EvalMetrics
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.pipelines import (
@@ -24,7 +23,6 @@ from juniper.preprocessor.pipelines import (
 class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
     def __init__(
         self,
-        feature_store: BaseFeatureStore,
         schema: pa.Schema | None = None,
         numeric_pipeline: Pipeline | None = None,
         categorical_pipeline: Pipeline | None = None,
@@ -33,9 +31,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
         prefix: str = "",
         n_jobs: int = -1,
     ):
-        if schema is None:
-            schema = feature_store.schema
-        metadata = feature_store.get_feature_types(schema)
+        metadata = get_feature_types(schema)
 
         transformers = []
         if columns := metadata.get(FeatureType.NUMERIC):
@@ -63,9 +59,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
                 try:
                     cn = ColumnNormalizer(
                         field=schema.field(column),
-                        preprocessor_factory=partial(
-                            ColumnTransformer, feature_store=feature_store, prefix=f"{prefix}{column}."
-                        ),
+                        preprocessor_factory=partial(ColumnTransformer, schema=schema, prefix=f"{prefix}{column}."),
                     )
                     transformers.append((column, cn, [column]))
                 except ValueError as e:
