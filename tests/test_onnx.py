@@ -3,15 +3,12 @@ import tempfile
 import numpy as np
 import onnx
 import pandas as pd
-import pyarrow as pa
-import pytest
 import torch.nn
 from onnxruntime import InferenceSession
 
-from juniper.common.data_type import FeatureType
-from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.modeling.model_wrapper import Model
 from juniper.modeling.torch import TorchModel
+from juniper.preprocessor.preprocessor import ColumnTransformer
 
 
 def test_onnx_export(onnx_schema, data):

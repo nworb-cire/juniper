@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import pandas as pd
 import pyarrow as pa
 import pytest
@@ -8,7 +11,10 @@ from juniper.common.data_type import FeatureType
 
 @pytest.fixture
 def data_path() -> str:
-    return "data/feature_store.parquet"
+    # path of current file
+    current_filepath = os.path.abspath(__file__)
+    current_filepath = Path(current_filepath)
+    return (current_filepath.parent / "data/feature_store.parquet").absolute().as_posix()
 
 
 @pytest.fixture

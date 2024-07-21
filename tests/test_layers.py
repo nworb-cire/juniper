@@ -1,12 +1,7 @@
-import pyarrow as pa
-import pytest
 import torch
 
-from juniper.common.data_type import FeatureType
 from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.modeling.layers import Unify, SummaryPool
-
-
 
 
 def test_unify(onnx_schema, data):
