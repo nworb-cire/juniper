@@ -100,16 +100,6 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer):
             target_opset=17,
         )
         onnx.checker.check_model(model_onnx, full_check=True)
-        # rename input
-        for node in model_onnx.graph.input:
-            for feature_name in self.feature_names_in_:
-                if node.name == feature_name.replace(".", "_"):
-                    node.name = feature_name
-        for node in model_onnx.graph.node:
-            for i in range(len(node.input)):
-                for feature_name in self.feature_names_in_:
-                    if node.input[i] == feature_name.replace(".", "_"):
-                        node.input[i] = feature_name
         # rename output
         assert len(model_onnx.graph.output) == 1
         output_node_name = model_onnx.graph.output[0].name
