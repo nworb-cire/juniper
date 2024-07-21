@@ -10,8 +10,8 @@ from sklearn.pipeline import Pipeline
 from juniper.common.component import ModelComponent
 from juniper.common.data_type import FeatureType
 from juniper.common.export import get_onnx_types, merge_models
-from juniper.common.setup import load_config
 from juniper.data_loading.feature_store import BaseFeatureStore
+from juniper.modeling.metrics import EvalMetrics
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.pipelines import (
     get_default_numeric_pipeline,
@@ -19,7 +19,6 @@ from juniper.preprocessor.pipelines import (
     get_default_boolean_pipeline,
     get_default_timestamp_pipeline,
 )
-from juniper.modeling.metrics import EvalMetrics
 
 
 class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
@@ -60,17 +59,13 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
             transformers.append((f"{prefix}timestamp", timestamp_pipeline, columns))
 
         if columns := metadata.get(FeatureType.ARRAY):
-            config = load_config()
             for column in columns:
-                feature_metadata = config["data_sources"]["feature_store"].get("feature_meta", {}).get(column, {})
                 try:
                     cn = ColumnNormalizer(
                         field=schema.field(column),
                         preprocessor_factory=partial(
                             ColumnTransformer, feature_store=feature_store, prefix=f"{prefix}{column}."
                         ),
-                        record_path=feature_metadata.get("record_path"),
-                        meta=feature_metadata.get("meta"),
                     )
                     transformers.append((column, cn, [column]))
                 except ValueError as e:

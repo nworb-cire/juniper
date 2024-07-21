@@ -1,14 +1,12 @@
 import dataclasses
 import json
 from collections import defaultdict
-from datetime import datetime
 
 import onnx
 import sklearn.compose
 from onnxconverter_common import FloatTensorType, StringTensorType, TensorType
 
 from juniper.common.data_type import FeatureType
-from juniper.common.setup import load_config
 from juniper.modeling.metrics import EvalMetrics
 
 
@@ -82,20 +80,20 @@ def add_metadata(model_onnx: onnx.ModelProto, key: str, value: str):
     model_onnx.metadata_props.append(message_proto)
 
 
-def add_default_metadata(model_onnx: onnx.ModelProto):
-    config = load_config()
-    enabled_feature_types = config["data_sources"]["feature_store"]["enabled_feature_types"]
-    if FeatureType.ARRAY in enabled_feature_types:
-        feature_meta = config["data_sources"]["feature_store"].get("feature_meta", {})
-        add_metadata(model_onnx, "feature_meta", json.dumps(feature_meta))
-    add_metadata(model_onnx, "creation_date", str(datetime.utcnow()))
-    for k, v in config["model"].get("metadata", {}).items():
-        if k == "doc_string":
-            model_onnx.doc_string = v
-            model_onnx.graph.doc_string = v
-        else:
-            add_metadata(model_onnx, k, v)
-    add_metadata(model_onnx, "hyperparameters", json.dumps(config["model"]["hyperparameters"]))
+# def add_default_metadata(model_onnx: onnx.ModelProto):
+#     config = load_config()
+#     enabled_feature_types = config["data_sources"]["feature_store"]["enabled_feature_types"]
+#     if FeatureType.ARRAY in enabled_feature_types:
+#         feature_meta = config["data_sources"]["feature_store"].get("feature_meta", {})
+#         add_metadata(model_onnx, "feature_meta", json.dumps(feature_meta))
+#     add_metadata(model_onnx, "creation_date", str(datetime.utcnow()))
+#     for k, v in config["model"].get("metadata", {}).items():
+#         if k == "doc_string":
+#             model_onnx.doc_string = v
+#             model_onnx.graph.doc_string = v
+#         else:
+#             add_metadata(model_onnx, k, v)
+#     add_metadata(model_onnx, "hyperparameters", json.dumps(config["model"]["hyperparameters"]))
 
 
 def add_metrics(model_onnx: onnx.ModelProto, metrics: list[EvalMetrics]):

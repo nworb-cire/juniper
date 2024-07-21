@@ -1,10 +1,10 @@
 import onnx
-import xgboost
 from onnxconverter_common import FloatTensorType
 from onnxmltools.convert import convert_xgboost
 
+import xgboost
 from juniper.common.component import ModelComponent
-from juniper.common.export import merge_models, add_default_metadata, add_metrics
+from juniper.common.export import merge_models, add_metrics
 from juniper.common.schema_tools import get_input_mapping
 from juniper.modeling.metrics import EvalMetrics
 from juniper.preprocessor.preprocessor import ColumnTransformer
@@ -31,7 +31,7 @@ class XGBClassifier(ModelComponent):
         merged = merge_models(self.preprocessor_onnx, model, io_map=io_map)
         onnx.checker.check_model(merged, full_check=True)
 
-        add_default_metadata(merged)
+        # add_default_metadata(merged)
         if metrics is not None:
             add_metrics(merged, metrics)
         return merged

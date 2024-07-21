@@ -8,7 +8,6 @@ from sklearn.base import TransformerMixin, BaseEstimator
 
 from juniper.common import schema_tools
 from juniper.common.data_type import FeatureType
-from juniper.common.setup import load_config
 from juniper.data_loading.json_normalize import json_normalize
 
 
@@ -17,16 +16,15 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         self,
         field: pa.Field,
         preprocessor_factory: Callable,
-        record_path: str | None = None,
-        meta: list[str | list[str]] | None = None,
+        override_unusable_features: list[str] | None = None,
+        enabled_feature_types: list[FeatureType] | None = None,
     ):
         self.field = field
         self.preprocessor_factory = preprocessor_factory
-        self.record_path = record_path
-        self.meta = meta
-
-        config = load_config()
-        override_unusable_features = tuple(config["data_sources"]["feature_store"].get("unusable_features", []))
+        self.record_path = field.metadata.get(b"record_path", None)
+        self.meta = field.metadata.get(b"meta", None)
+        self.override_unusable_features = override_unusable_features or []
+        self.enabled_feature_types = enabled_feature_types or list(FeatureType)
 
         if self.record_path is None:
             self.record_prefix = f"{self.field.name}."
@@ -41,7 +39,7 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
             if (
                 not field.name.startswith((self.record_prefix, *[f"{self.meta_prefix}{m}" for m in meta or []]))
                 or field.metadata.get(b"usable_type", b"").decode()
-                not in config["data_sources"]["feature_store"]["enabled_feature_types"]
+                not in enabled_feature_types
                 or field.name.startswith(override_unusable_features)
             ):
                 logging.debug(f"Removing field {field.name}")

@@ -10,11 +10,11 @@ import torch
 from torch import nn
 
 from juniper.common.component import ModelComponent
-from juniper.common.export import merge_models, add_default_metadata, add_metrics
+from juniper.common.export import merge_models, add_metrics
 from juniper.common.schema_tools import get_input_mapping
-from juniper.preprocessor.preprocessor import ColumnTransformer
 from juniper.modeling.metrics import EvalMetrics, evaluate_model
 from juniper.modeling.utils import batches, dummy_inference
+from juniper.preprocessor.preprocessor import ColumnTransformer
 
 
 class TorchModel(ModelComponent):
@@ -113,7 +113,7 @@ class TorchModel(ModelComponent):
         onnx.checker.check_model(model, full_check=True)
 
         self.validate(merged)
-        add_default_metadata(merged)
+        # add_default_metadata(merged)
         if metrics is not None:
             add_metrics(merged, metrics)
         return merged

@@ -7,14 +7,7 @@ from juniper.data_loading.outcomes import LocalStandardOutcomes
 
 
 @pytest.fixture
-def config():
-    os.environ["CONFIG_LOCATION"] = "tests/test_config.toml"
-    yield
-    del os.environ["CONFIG_LOCATION"]
-
-
-@pytest.fixture
-def feature_store(config):
+def feature_store():
     return LocalParquetFeatureStore()
 
 

@@ -1,12 +1,9 @@
-import importlib
 import logging
 
 import numpy as np
 import onnx
 import onnxruntime
 import pandas as pd
-
-from juniper.common.setup import load_config
 
 
 def to_human_readable_number(x: int) -> str:
@@ -32,14 +29,6 @@ def batches(x: pd.DataFrame, y: pd.DataFrame, batch_size: int, shuffle: bool = T
         batch_x = x.iloc[idx_]
         logging.debug(f"Batch {i // batch_size + 1}/{len(idx) // batch_size + 1} size: {len(idx_)}")
         yield batch_x, batch_y
-
-
-def get_model_class():
-    config = load_config()
-    model_module = importlib.import_module(config["model"]["code"]["module"])
-    model_class = getattr(model_module, config["model"]["code"]["class"])
-    importlib.import_module(config["model"]["code"]["module"])
-    return model_class
 
 
 def dummy_inference(model: onnx.ModelProto):

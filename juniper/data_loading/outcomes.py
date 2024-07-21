@@ -10,7 +10,6 @@ from pyarrow import dataset as ds
 from pyarrow import parquet as pq
 from s3path import S3Path
 
-from juniper.common.setup import load_config
 from juniper.data_loading.data_source import BaseDataSource, LocalDataSource, ParquetDataSource
 
 
@@ -19,9 +18,6 @@ class BaseOutcomes(BaseDataSource, ABC):
     metadata: pd.Series
 
     def __init__(self, path: S3Path | None = None, **kwargs):
-        config = load_config()
-        if path is None:
-            path = config["data_sources"]["outcomes"]["location"]
         self.path = path
         super().__init__(**kwargs)
 
@@ -50,14 +46,13 @@ class BasePivotedOutcomes(BaseOutcomes, ParquetDataSource, ABC):
 
     def _load_train_test(
         self,
+        outcomes_columns: list[str],
+        pivot_column: str,
         train_idx: pd.Index | None = None,
         test_idx: pd.Index | None = None,
         train_time_end: pd.Timestamp | None = None,
         holdout_time_end: pd.Timestamp | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-        config = load_config()
-        outcomes_columns = config["data_sources"]["outcomes"]["binary_outcomes_list"]
-        pivot_column = config["data_sources"]["outcomes"]["pivot_column"]
         filters = ~ds.field(self.index_column).is_null()
         if train_idx is not None:
             filters &= pc.is_in(ds.field(self.index_column), pa.array(train_idx))
@@ -84,9 +79,8 @@ class LocalPivotedOutcomes(BasePivotedOutcomes, LocalDataSource):
 
 
 class StandardOutcomes(BaseOutcomes, ParquetDataSource, ABC):
-    def __init__(self, *args, **kwargs):
-        config = load_config()
-        self.binary_outcomes_list = tuple(config["data_sources"]["outcomes"]["binary_outcomes_list"])
+    def __init__(self, *args, binary_outcomes_list: list[str] | None = None, **kwargs):
+        self.binary_outcomes_list = tuple(binary_outcomes_list or [])
         super().__init__(*args, **kwargs)
 
     def _get_columns(self, columns: list[str] | None = None) -> list[str]:

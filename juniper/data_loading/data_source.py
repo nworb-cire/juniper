@@ -5,20 +5,21 @@ from pathlib import Path
 
 import pandas as pd
 from pyarrow import compute as pc
-from s3path import S3Path
-
-from juniper.common.setup import load_config
 
 
 class BaseDataSource(ABC):
     index_column: str
     timestamp_column: str
-    config_location: str
 
-    def __init__(self, columns: list[str] | None = None):
-        config = load_config()
-        self.index_column = config["data_sources"]["index_column"]
-        self.timestamp_column = config["data_sources"][self.config_location]["timestamp_column"]
+    def __init__(
+        self,
+        index_column: str,
+        timestamp_column: str,
+        columns: list[str] | None = None,
+        **kwargs,
+    ):
+        self.index_column = index_column
+        self.timestamp_column = timestamp_column
         self.columns = columns
         self.metadata = self.get_metadata()
 
@@ -100,41 +101,41 @@ class LocalDataSource(ParquetDataSource, ABC):
         return self.read_parquet(columns=[self.timestamp_column])[self.timestamp_column]
 
 
-class S3ParquetDataSource(ParquetDataSource, ABC):
-    path: S3Path
-
-    @property
-    def _path_str(self) -> str:
-        return self.path.as_uri()
-
-    def read_parquet(
-        self,
-        path: S3Path | None = None,
-        columns: list[str] | None = None,
-        filters: list[tuple] | list[list[tuple]] | pc.Expression | None = None,
-    ) -> pd.DataFrame:
-        # TODO: keep this DRY
-        if path is None:
-            path = self.path
-        if columns is None and self.columns is not None:
-            columns = self.columns
-        if columns is not None and self.index_column not in columns:
-            columns.append(self.index_column)
-        config = load_config()
-        return pd.read_parquet(
-            path.as_uri(),
-            columns=columns,
-            dtype_backend="pyarrow",
-            filters=filters,
-            storage_options={
-                "key": config["minio"]["aws_access_key_id"],
-                "secret": config["minio"]["aws_secret_access_key"],
-                "client_kwargs": {
-                    "endpoint_url": config["minio"]["endpoint_url"],
-                },
-                "config_kwargs": {"s3": {"addressing_style": "virtual"}},
-            },
-        )
+# class S3ParquetDataSource(ParquetDataSource, ABC):
+#     path: S3Path
+#
+#     @property
+#     def _path_str(self) -> str:
+#         return self.path.as_uri()
+#
+#     def read_parquet(
+#         self,
+#         path: S3Path | None = None,
+#         columns: list[str] | None = None,
+#         filters: list[tuple] | list[list[tuple]] | pc.Expression | None = None,
+#     ) -> pd.DataFrame:
+#         # TODO: keep this DRY
+#         if path is None:
+#             path = self.path
+#         if columns is None and self.columns is not None:
+#             columns = self.columns
+#         if columns is not None and self.index_column not in columns:
+#             columns.append(self.index_column)
+#         config = load_config()
+#         return pd.read_parquet(
+#             path.as_uri(),
+#             columns=columns,
+#             dtype_backend="pyarrow",
+#             filters=filters,
+#             storage_options={
+#                 "key": config["minio"]["aws_access_key_id"],
+#                 "secret": config["minio"]["aws_secret_access_key"],
+#                 "client_kwargs": {
+#                     "endpoint_url": config["minio"]["endpoint_url"],
+#                 },
+#                 "config_kwargs": {"s3": {"addressing_style": "virtual"}},
+#             },
+#         )
 
 
 class SqlDataSource(BaseDataSource, ABC):
