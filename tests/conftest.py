@@ -9,11 +9,10 @@ from pyarrow import parquet as pq
 from juniper.common.data_type import FeatureType
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def data_path() -> str:
     # path of current file
-    current_filepath = os.path.abspath(__file__)
-    current_filepath = Path(current_filepath)
+    current_filepath = Path(os.path.abspath(__file__))
     return (current_filepath.parent / "data/feature_store.parquet").absolute().as_posix()
 
 

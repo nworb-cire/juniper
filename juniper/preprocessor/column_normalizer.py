@@ -16,14 +16,14 @@ class ColumnNormalizer(TransformerMixin, BaseEstimator):
         self,
         field: pa.Field,
         preprocessor_factory: Callable,
-        override_unusable_features: tuple[str] = (),
+        override_unusable_features: tuple[str, ...] | None = None,
         enabled_feature_types: list[FeatureType] | None = None,
     ):
         self.field = field
         self.preprocessor_factory = preprocessor_factory
         self.record_path = field.metadata.get(b"record_path", None)
         self.meta = field.metadata.get(b"meta", [])
-        self.override_unusable_features = override_unusable_features
+        self.override_unusable_features = override_unusable_features or ()
         self.enabled_feature_types = enabled_feature_types or list(FeatureType)
 
         if self.record_path is None:

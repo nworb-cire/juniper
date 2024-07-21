@@ -24,7 +24,7 @@ from juniper.preprocessor.pipelines import (
 class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
     def __init__(
         self,
-        schema: pa.Schema | None = None,
+        schema: pa.Schema,
         numeric_pipeline: Pipeline | None = None,
         categorical_pipeline: Pipeline | None = None,
         boolean_pipeline: Pipeline | None = None,

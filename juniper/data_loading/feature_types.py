@@ -8,10 +8,12 @@ from juniper.common.data_type import FeatureType
 def get_feature_types(
     schema: pa.Schema,
     enabled_feature_types: list[FeatureType] | None = None,
-    override_unusable_features: tuple[str] = (),
+    override_unusable_features: tuple[str, ...] | None = None,
 ) -> dict[FeatureType, list[str]]:
     if enabled_feature_types is None:
         enabled_feature_types = list(FeatureType)
+    if override_unusable_features is None:
+        override_unusable_features = ()
 
     columns = defaultdict(list)
 
