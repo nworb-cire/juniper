@@ -7,11 +7,9 @@ import sklearn.compose
 from skl2onnx import convert_sklearn
 from sklearn.pipeline import Pipeline
 
-from juniper.common.component import ModelComponent
 from juniper.common.data_type import FeatureType
 from juniper.common.export import get_onnx_types, merge_models
 from juniper.data_loading.feature_types import get_feature_types
-from juniper.modeling.metrics import EvalMetrics
 from juniper.preprocessor.column_normalizer import ColumnNormalizer
 from juniper.preprocessor.pipelines import (
     get_default_numeric_pipeline,
@@ -21,7 +19,7 @@ from juniper.preprocessor.pipelines import (
 )
 
 
-class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
+class ColumnTransformer(sklearn.compose.ColumnTransformer):
     def __init__(
         self,
         schema: pa.Schema,
@@ -81,7 +79,7 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
             logging.debug(f"Transformer: {transformer[0]} ({len(transformer[2])} columns)")
         self.set_output(transform="pandas")
 
-    def to_onnx(self, name: str | None = None, metrics: list[EvalMetrics] | None = None) -> onnx.ModelProto:
+    def to_onnx(self, name: str | None = None) -> onnx.ModelProto:
         transformers = []
         sub_transformers = []
         for name_, t, cols in self.transformers_:
@@ -124,9 +122,6 @@ class ColumnTransformer(sklearn.compose.ColumnTransformer, ModelComponent):
         # merge subgraphs
         model_onnx = reduce(partial(merge_models, io_map=[]), sub_transformers, model_onnx)
         return model_onnx
-
-    def validate(self, model: onnx.ModelProto):
-        pass
 
     def _get_param_names(cls):
         return sklearn.compose.ColumnTransformer._get_param_names()

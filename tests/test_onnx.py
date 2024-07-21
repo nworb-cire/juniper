@@ -2,12 +2,8 @@ import tempfile
 
 import numpy as np
 import onnx
-import pandas as pd
-import torch.nn
 from onnxruntime import InferenceSession
 
-from juniper.modeling.model_wrapper import Model
-from juniper.modeling.torch import TorchModel
 from juniper.preprocessor.preprocessor import ColumnTransformer
 
 
@@ -52,29 +48,3 @@ def test_runtime(onnx_schema, data):
         ]
     )
     assert np.allclose(output[1], expected)
-
-
-class SimpleModel(torch.nn.Module, Model):
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-        self.inputs = {}
-        self.outputs = []
-        self.linear = torch.nn.Linear(5, 1)
-
-    def forward(self, x: pd.DataFrame):
-        arr = torch.tensor(list(map(lambda y: np.mean(y, axis=1), x["arr"].values)), dtype=torch.float32)
-        x_ = torch.tensor(x.drop(columns=["arr"]).values.T, dtype=torch.float32)
-        x_ = torch.cat([x_, arr], dim=0)
-        return self.linear(x_)
-
-
-def test_simple_model(onnx_schema, data):
-    column_transformer = ColumnTransformer(schema=onnx_schema)
-    column_transformer.fit(data)
-
-    model = TorchModel(
-        model_cls=SimpleModel,
-        loss_fn=lambda: None,
-        preprocessor=column_transformer,
-    )
-    model.fit(pd.DataFrame(), pd.DataFrame(), hyperparameters={"epochs": 0, "learning_rate": 0})
